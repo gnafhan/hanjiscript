@@ -87,9 +87,7 @@ function WorkflowRunner:signal(signal, data)
 	if payload.inventory == nil and plan then
 		payload.inventory = plan.inventory
 	end
-	if payload.target ~= nil then
-		self.target = payload.target
-	end
+	self.target = payload.target or self.target
 
 	local valid, reason = self.validator:check(self.machine, signal, payload, plan)
 	if not valid then
