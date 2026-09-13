@@ -100,6 +100,7 @@ end
 
 function ReplaySession:advanceTo(time)
 	local targetTime = math.max(0, tonumber(time) or 0)
+	self.clock.time = targetTime
 	while self.cursor <= #self.events and eventTime(self.events[self.cursor]) <= targetTime do
 		self:_apply(self.events[self.cursor])
 		self.cursor += 1
