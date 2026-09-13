@@ -14,7 +14,10 @@ function SessionRecorder:stop()
 	if self.status~="running" and self.status~="paused" then return end; self.status="stopped"; self.maid:Clean()
 	if self.context.capabilities.persistence and type(writefile)=="function" then
 		local ok,json=pcall(function() return game:GetService("HttpService"):JSONEncode({startedAt=self.startedAt,events=self.events}) end)
-		if ok then pcall(writefile,"HanjiScript/session-"..os.time()..".json",json) end
+		if ok then
+			if type(makefolder)=="function" then pcall(makefolder,"HanjiScript") end
+			pcall(writefile,"HanjiScript/session-"..os.time()..".json",json)
+		end
 	end
 end
 function SessionRecorder:pause() self.status="paused" end
