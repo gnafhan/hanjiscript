@@ -61,15 +61,28 @@ Theme.Text = {
 	mono = 12,
 }
 
+local function packagedFont(family, weight, fallback)
+	-- rbxasset font families are bundled by Roblox, unlike a web font URL.  The
+	-- fallback keeps the interface legible in older runtimes that lack FontFace.
+	local ok, font = pcall(function()
+		return Font.new(
+			"rbxasset://fonts/families/" .. family .. ".json",
+			weight,
+			Enum.FontStyle.Normal
+		)
+	end)
+
+	return ok and font or fallback
+end
+
 Theme.Font = {
-	-- Use Roblox's packaged fonts.  Remote FontFace assets are not consistently
-	-- available in executor runtimes, which left the interface looking broken
-	-- while the asset was loading (or when it could not load at all).
+	-- Gotham Bold remains the display face; it gives dashboard headings their
+	-- strong, familiar shape.  Montserrat supplies a less generic UI text face.
 	display = Enum.Font.GothamBold,
 	title = Enum.Font.GothamBold,
-	medium = Enum.Font.GothamMedium,
-	body = Enum.Font.Gotham,
-	mono = Enum.Font.Code,
+	medium = packagedFont("Montserrat", Enum.FontWeight.SemiBold, Enum.Font.GothamMedium),
+	body = packagedFont("Montserrat", Enum.FontWeight.Medium, Enum.Font.Gotham),
+	mono = packagedFont("RobotoMono", Enum.FontWeight.Regular, Enum.Font.Code),
 }
 
 Theme.Motion = {
