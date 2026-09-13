@@ -204,6 +204,7 @@ function InspectorPage.create(context, parent)
 	detail.class = detailRow("Class", 2)
 	detail.path = detailRow("Path", 3)
 	detail.children = detailRow("Children", 4)
+	detail.assets = detailRow("Assets", 5)
 
 	local placeholder = Components.label(detailCard, {
 		text = "Select an instance from the list to inspect it.",
@@ -239,6 +240,10 @@ function InspectorPage.create(context, parent)
 		detail.class.Text = entry.className or instance.ClassName
 		detail.path.Text = entry.path or instance:GetFullName()
 		detail.children.Text = tostring(#instance:GetChildren())
+		local assets = entry.assets or {}
+		local values = {}
+		for _, asset in pairs(assets) do if asset and asset ~= "" then table.insert(values, tostring(asset)) end end
+		detail.assets.Text = #values > 0 and table.concat(values, ", ") or "—"
 	end
 
 	local function render(entries)

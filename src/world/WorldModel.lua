@@ -9,8 +9,13 @@ local function entity(instance)
 	local position
 	if instance:IsA("BasePart") then position = instance.Position
 	elseif instance:IsA("Model") then position = instance:GetPivot().Position end
+	local assets={}
+	if instance:IsA("MeshPart") then assets.mesh=instance.MeshId; assets.texture=instance.TextureID
+	elseif instance:IsA("Decal") or instance:IsA("Texture") then assets.texture=instance.Texture
+	elseif instance:IsA("Sound") then assets.sound=instance.SoundId
+	elseif instance:IsA("Animation") then assets.animation=instance.AnimationId end
 	return { id = instance:GetDebugId(), instance = instance, name = instance.Name, className = instance.ClassName,
-		path = instance:GetFullName(), position = position, attributes = instance:GetAttributes() }
+		path = instance:GetFullName(), position = position, attributes = instance:GetAttributes(), assets = assets }
 end
 
 function WorldModel.new(context)
