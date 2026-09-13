@@ -109,7 +109,7 @@ function AppUI:_buildScreen()
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-		DisplayOrder = 50,
+		DisplayOrder = 1000,
 		parent = parent,
 	})
 
@@ -117,21 +117,6 @@ function AppUI:_buildScreen()
 end
 
 function AppUI:_buildWindow()
-	local shadow = Components.create("Frame", {
-		Name = "Shadow",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(Layout.windowWidth + 22, Layout.windowHeight + 22),
-		BackgroundColor3 = palette.shadow,
-		BackgroundTransparency = 0.55,
-		BorderSizePixel = 0,
-		ZIndex = 1,
-		parent = self._screen,
-	})
-
-	Components.corner(shadow, Theme.Radius.xl)
-	self._shadow = shadow
-
 	local window = Components.create("Frame", {
 		Name = "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -141,7 +126,7 @@ function AppUI:_buildWindow()
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		ZIndex = 2,
+		ZIndex = 10,
 		parent = self._screen,
 	})
 
@@ -659,7 +644,6 @@ function AppUI:_makeResizable(handle, target)
 		local height = clamp(startSize.Y.Offset + delta.Y, Layout.minHeight, 1800)
 		self._expandedSize = UDim2.fromOffset(width, height)
 		target.Size = self._expandedSize
-		self._shadow.Size = UDim2.fromOffset(width + 22, height + 22)
 	end
 
 	self._maid:Add(handle.InputBegan:Connect(function(input)
