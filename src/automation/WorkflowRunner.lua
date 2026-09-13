@@ -39,7 +39,10 @@ function WorkflowRunner.new(context, definition)
 		lastObservation = nil,
 	}, WorkflowRunner)
 
-	self.maid:Add(context.eventBus:on(EventTypes.WorkflowStateChanged, function()
+	self.maid:Add(context.eventBus:on(EventTypes.WorkflowStateChanged, function(event)
+		if event and event.data and event.data.target then
+			self.target = event.data.target
+		end
 		if self.machine.running then
 			self:refreshPlan()
 		end
