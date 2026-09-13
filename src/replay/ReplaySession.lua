@@ -32,6 +32,7 @@ function ReplaySession.new(context)
 		clock = ReplayClock.new(),
 		session = nil,
 		events = {},
+		snapshots = {},
 		cursor = 1,
 		state = {},
 	}, ReplaySession)
@@ -47,8 +48,10 @@ function ReplaySession:_resetState()
 		position = nil,
 		inventoryCount = 0,
 		entities = {},
+		entityCountOverride = nil,
 		workflowState = nil,
 		lastSemantic = nil,
+		checkpointTime = nil,
 	}
 	self.cursor = 1
 end
@@ -66,9 +69,33 @@ function ReplaySession:load(session)
 	table.sort(self.events, function(a, b)
 		return eventTime(a) < eventTime(b)
 	end)
+	self.snapshots = {}
+	for _, snapshot in ipairs(session.snapshots or {}) do
+		if type(snapshot) == "table" then
+			table.insert(self.snapshots, snapshot)
+		end
+	end
+	table.sort(self.snapshots, function(a, b)
+		return (tonumber(a.timestamp) or 0) < (tonumber(b.timestamp) or 0)
+	end)
 	self:_resetState()
 	self.clock:seek(0)
 	return true
+end
+
+function ReplaySession:_restoreSnapshot(snapshot)
+	if type(snapshot) ~= "table" then
+		return
+	end
+
+	local world = snapshot.world or {}
+	local inventory = snapshot.inventory or {}
+	local workflow = snapshot.workflow or {}
+	self.state.position = copy(snapshot.player and snapshot.player.position)
+	self.state.inventoryCount = tonumber(inventory.count) or 0
+	self.state.workflowState = workflow.state
+	self.state.entityCountOverride = tonumber(world.entityCount)
+	self.state.checkpointTime = tonumber(snapshot.timestamp) or 0
 end
 
 function ReplaySession:_apply(event)
@@ -80,10 +107,20 @@ function ReplaySession:_apply(event)
 		self.state.inventoryCount = data.after or self.state.inventoryCount
 	elseif eventType == EventTypes.WorldEntityAdded then
 		local id = data.id or data.path or data.name
-		if id then self.state.entities[id] = data end
+		if id then
+			if self.state.entityCountOverride ~= nil and not self.state.entities[id] then
+				self.state.entityCountOverride += 1
+			end
+			self.state.entities[id] = data
+		end
 	elseif eventType == EventTypes.WorldEntityRemoved then
 		local id = data.id or data.path or data.name
-		if id then self.state.entities[id] = nil end
+		if id then
+			if self.state.entityCountOverride ~= nil then
+				self.state.entityCountOverride = math.max(0, self.state.entityCountOverride - 1)
+			end
+			self.state.entities[id] = nil
+		end
 	elseif eventType == EventTypes.WorkflowStateChanged then
 		self.state.workflowState = data.state
 	elseif eventType == EventTypes.SemanticAction then
@@ -116,6 +153,25 @@ function ReplaySession:seek(time)
 	local targetTime = math.max(0, tonumber(time) or 0)
 	self:_resetState()
 	self.clock.time = 0
+
+	-- Restore the nearest checkpoint first, then replay only the tail of the
+	-- event stream. This keeps long sessions responsive while preserving the
+	-- same deterministic result as a full replay.
+	local checkpoint
+	for _, snapshot in ipairs(self.snapshots) do
+		if (tonumber(snapshot.timestamp) or 0) <= targetTime then
+			checkpoint = snapshot
+		else
+			break
+		end
+	end
+	if checkpoint then
+		self:_restoreSnapshot(checkpoint)
+		local checkpointTime = tonumber(checkpoint.timestamp) or 0
+		while self.cursor <= #self.events and eventTime(self.events[self.cursor]) <= checkpointTime do
+			self.cursor += 1
+		end
+	end
 	return self:advanceTo(targetTime)
 end
 
@@ -134,9 +190,12 @@ function ReplaySession:step(delta)
 end
 
 function ReplaySession:getSnapshot()
-	local entityCount = 0
-	for _ in pairs(self.state.entities or {}) do
-		entityCount += 1
+	local entityCount = self.state.entityCountOverride
+	if entityCount == nil then
+		entityCount = 0
+		for _ in pairs(self.state.entities or {}) do
+			entityCount += 1
+		end
 	end
 	return {
 		sessionId = self.session and self.session.id,
@@ -144,6 +203,8 @@ function ReplaySession:getSnapshot()
 		duration = self.session and self.session.duration or (#self.events > 0 and eventTime(self.events[#self.events]) or 0),
 		cursor = self.cursor,
 		eventCount = #self.events,
+		snapshotCount = #self.snapshots,
+		checkpointTime = self.state.checkpointTime,
 		playing = self.clock.playing,
 		state = {
 			position = copy(self.state.position),

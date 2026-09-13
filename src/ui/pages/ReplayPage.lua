@@ -123,7 +123,7 @@ function ReplayPage.create(context, parent)
 	local snapshotCard = Components.card(frame, {
 		name = "ReplayState",
 		padding = Theme.Spacing.lg,
-		size = UDim2.new(1, 0, 0, 154),
+		size = UDim2.new(1, 0, 0, 196),
 		layoutOrder = 2,
 	})
 	Components.label(snapshotCard, {
@@ -139,6 +139,7 @@ function ReplayPage.create(context, parent)
 		{ key = "Inventory", x = 0.5, y = 28 },
 		{ key = "Entities", x = 0, y = 70 },
 		{ key = "Last semantic", x = 0.5, y = 70 },
+		{ key = "Checkpoint", x = 0, y = 112 },
 	}
 	for _, field in ipairs(fields) do
 		local position = UDim2.new(field.x, 0, 0, field.y)
@@ -182,7 +183,10 @@ function ReplayPage.create(context, parent)
 		status.set(hasSession and (snapshot.playing and "playing" or "ready") or "empty", hasSession and palette.success or palette.textMuted)
 		if hasSession then
 			title.Text = "Session " .. tostring(snapshot.sessionId)
-			subtitle.Text = ("%d events · deterministic read-only playback"):format(snapshot.eventCount or 0)
+			subtitle.Text = ("%d events · %d checkpoints · deterministic read-only playback"):format(
+				snapshot.eventCount or 0,
+				snapshot.snapshotCount or 0
+			)
 		else
 			title.Text = "No session loaded"
 			subtitle.Text = "Stop a recording to prepare it for replay."
@@ -193,6 +197,9 @@ function ReplayPage.create(context, parent)
 		stateLabels.Entities.Text = tostring(state.entityCount or 0) .. " tracked"
 		local semantic = state.lastSemantic
 		stateLabels["Last semantic"].Text = semantic and (semantic.kind or "observed") or "—"
+		stateLabels.Checkpoint.Text = snapshot.checkpointTime ~= nil
+			and formatTime(snapshot.checkpointTime)
+			or "start"
 	end
 
 	maid:Add(context.eventBus:on(EventTypes.ReplayStateChanged, render))
