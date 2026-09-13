@@ -25,6 +25,7 @@ return {
 	SemanticAction = "semantic.action",
 	ReplayStateChanged = "replay.state_changed",
 	ReplayEventApplied = "replay.event_applied",
+	SnapshotCaptured = "snapshot.captured",
 
 	LogEmitted = "log.emitted",
 }

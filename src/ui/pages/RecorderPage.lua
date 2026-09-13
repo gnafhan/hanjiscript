@@ -234,6 +234,7 @@ function RecorderPage.create(context, parent)
 		"navigation.started",
 		"navigation.path_computed",
 		"navigation.completed",
+		"snapshot.captured",
 	}
 	for _, eventType in ipairs(recordedTypes) do
 		maid:Add(context.eventBus:on(eventType, function(data)
@@ -250,6 +251,11 @@ function RecorderPage.create(context, parent)
 					message = ("%.1f studs · %d waypoints"):format(data.pathLength, data.waypoints or 0)
 				elseif eventType == "navigation.completed" and data.success ~= nil then
 					message = data.success and "path ready" or (data.reason or "failed")
+				elseif eventType == "snapshot.captured" and data.world then
+					message = ("%d entities · %d items"):format(
+						data.world.entityCount or 0,
+						data.inventory and data.inventory.count or 0
+					)
 				end
 				append({ timestamp = os.clock() - recorder.startedAt, tag = eventType, message = message or "observed", level = 20 })
 			end

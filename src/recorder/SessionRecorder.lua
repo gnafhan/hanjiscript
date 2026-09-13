@@ -3,6 +3,7 @@ local require = ...
 local Maid = require("utils.Maid")
 local EventTypes = require("core.EventTypes")
 local EventSchema = require("recorder.EventSchema")
+local SnapshotManager = require("recorder.SnapshotManager")
 
 local SessionRecorder = {}
 SessionRecorder.__index = SessionRecorder
@@ -20,6 +21,7 @@ local TYPES = {
 	EventTypes.WorkflowStateChanged,
 	EventTypes.WorkflowPlanUpdated,
 	EventTypes.SemanticAction,
+	EventTypes.SnapshotCaptured,
 }
 
 local SOURCES = {
@@ -35,6 +37,7 @@ local SOURCES = {
 	[EventTypes.WorkflowStateChanged] = "StateMachine",
 	[EventTypes.WorkflowPlanUpdated] = "Planner",
 	[EventTypes.SemanticAction] = "EventCorrelator",
+	[EventTypes.SnapshotCaptured] = "SnapshotManager",
 }
 
 local function serializable(value, seen)
@@ -75,6 +78,7 @@ function SessionRecorder.new(context)
 		session = nil,
 		startedAt = nil,
 		lastExportPath = nil,
+		snapshotManager = SnapshotManager.new(context),
 	}, SessionRecorder)
 end
 
@@ -105,6 +109,10 @@ function SessionRecorder:start()
 		end))
 	end
 
+	-- Register subscribers before the first checkpoint so the initial snapshot
+	-- is part of the same event stream as every later checkpoint.
+	self.snapshotManager:start()
+
 	return true
 end
 
@@ -113,6 +121,7 @@ function SessionRecorder:stop()
 		return false
 	end
 
+	self.snapshotManager:stop()
 	self.status = "stopped"
 	self.maid:Clean()
 
@@ -120,6 +129,7 @@ function SessionRecorder:stop()
 		self.session.duration = os.clock() - (self.startedAt or os.clock())
 		self.session.eventCount = #self.events
 		self.session.events = self.events
+		self.session.snapshots = self.snapshotManager:getSnapshots()
 	end
 
 	local capabilities = self.context.capabilities or {}
