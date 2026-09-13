@@ -59,28 +59,15 @@ Theme.Text = {
 	mono = 12,
 }
 
-local function buildFont(family, weightName, fallback)
-	local ok, font = pcall(function()
-		return Font.new(
-			"rbxasset://fonts/families/" .. family .. ".json",
-			Enum.FontWeight[weightName],
-			Enum.FontStyle.Normal
-		)
-	end)
-
-	if ok and font ~= nil then
-		return font
-	end
-
-	return fallback
-end
-
 Theme.Font = {
-	display = buildFont("Montserrat", "Bold", Enum.Font.GothamBold),
-	title = buildFont("Montserrat", "Bold", Enum.Font.GothamBold),
-	medium = buildFont("Montserrat", "Medium", Enum.Font.GothamMedium),
-	body = buildFont("Montserrat", "Regular", Enum.Font.Gotham),
-	mono = buildFont("RobotoMono", "Regular", Enum.Font.Code),
+	-- Use Roblox's packaged fonts.  Remote FontFace assets are not consistently
+	-- available in executor runtimes, which left the interface looking broken
+	-- while the asset was loading (or when it could not load at all).
+	display = Enum.Font.GothamBold,
+	title = Enum.Font.GothamBold,
+	medium = Enum.Font.GothamMedium,
+	body = Enum.Font.Gotham,
+	mono = Enum.Font.Code,
 }
 
 Theme.Motion = {

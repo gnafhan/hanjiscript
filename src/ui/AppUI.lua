@@ -279,8 +279,8 @@ function AppUI:_buildBody()
 	sidebar.Size = UDim2.new(0, Layout.sidebarWidth, 1, 0)
 
 	local sidebarInner = Components.create("Frame", {
-		Name = "Inner",
-		Size = UDim2.fromScale(1, 1),
+		Name = "Navigation",
+		Size = UDim2.new(1, 0, 1, -58),
 		BackgroundTransparency = 1,
 		parent = sidebar,
 	})
@@ -289,6 +289,7 @@ function AppUI:_buildBody()
 	Components.list(sidebarInner, { gap = Theme.Spacing.xs })
 
 	self._sidebarInner = sidebarInner
+	self._sidebar = sidebar
 
 	local separator = Components.create("Frame", {
 		Name = "Separator",
@@ -456,10 +457,11 @@ end
 function AppUI:_buildMeta()
 	local footer = Components.create("Frame", {
 		Name = "Footer",
-		Size = UDim2.new(1, 0, 0, 46),
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, Theme.Spacing.md, 1, -Theme.Spacing.md),
+		Size = UDim2.new(1, -(Theme.Spacing.md * 2), 0, 46),
 		BackgroundTransparency = 1,
-		LayoutOrder = 1000,
-		parent = self._sidebarInner,
+		parent = self._sidebar,
 	})
 
 	Components.divider(footer, 0).Position = UDim2.new(0, 0, 0, 0)

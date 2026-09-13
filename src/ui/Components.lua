@@ -564,7 +564,9 @@ function Components.navItem(parent, props, onClick)
 		})
 
 		label.TextColor3 = active and palette.text or palette.textSecondary
-		label.Font = active and Theme.Font.medium or Theme.Font.body
+		-- Keep this on the same font path as every other label.  Theme fonts may
+		-- be a FontFace or a legacy Enum.Font depending on the host runtime.
+		applyFont(label, active and Theme.Font.medium or Theme.Font.body)
 
 		for _, child in ipairs(icon:GetChildren()) do
 			if child:IsA("Frame") then

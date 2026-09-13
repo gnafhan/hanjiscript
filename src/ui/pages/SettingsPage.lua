@@ -18,10 +18,15 @@ local LOG_LEVELS = { "debug", "info", "warn", "error" }
 local SAMPLE_RATES = { 1, 2, 5, 10 }
 
 function SettingsPage.create(context, parent)
-	local frame = Components.create("Frame", {
+	local frame = Components.create("ScrollingFrame", {
 		Name = "SettingsPage",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = palette.borderStrong,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		parent = parent,
 	})
 
@@ -36,7 +41,9 @@ function SettingsPage.create(context, parent)
 		name = "Preferences",
 		padding = Theme.Spacing.md,
 		gap = Theme.Spacing.sm,
-		size = UDim2.new(1, 0, 0, 190),
+		-- 16px heading + three 50px rows + gaps and card padding.
+		-- The previous 190px height clipped the final control into the next card.
+		size = UDim2.new(1, 0, 0, 214),
 		layoutOrder = 0,
 	})
 
@@ -118,8 +125,8 @@ function SettingsPage.create(context, parent)
 	local about = Components.card(frame, {
 		name = "About",
 		padding = Theme.Spacing.md,
-		gap = Theme.Spacing.sm,
-		size = UDim2.new(1, 0, 1, -202),
+		gap = Theme.Spacing.xs,
+		size = UDim2.new(1, 0, 0, 178),
 		layoutOrder = 1,
 	})
 
