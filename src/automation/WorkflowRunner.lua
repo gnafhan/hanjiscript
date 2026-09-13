@@ -37,6 +37,10 @@ function WorkflowRunner.new(context, definition)
 		target = nil,
 		plan = nil,
 		lastObservation = nil,
+		startedAt = nil,
+		cycleCount = 0,
+		maxCycles = 100,
+		maxRuntime = 600,
 	}, WorkflowRunner)
 
 	self.maid:Add(context.eventBus:on(EventTypes.WorkflowStateChanged, function(event)
@@ -77,6 +81,10 @@ function WorkflowRunner:start()
 		return false, "workflow is already running"
 	end
 
+	self.startedAt = os.clock()
+	self.cycleCount = 0
+	self.maxCycles = math.max(1, tonumber(self.context.config:get("automation.maxCycles", 100)) or 100)
+	self.maxRuntime = math.max(0, tonumber(self.context.config:get("automation.maxRuntime", 600)) or 600)
 	self.target = nil
 	self:refreshPlan()
 	self.context.logger:info("Workflow", "started (dry-run)", { workflowId = self.definition.id })
@@ -84,6 +92,11 @@ function WorkflowRunner:start()
 end
 
 function WorkflowRunner:signal(signal, data)
+	if self.startedAt and self.maxRuntime > 0 and os.clock() - self.startedAt >= self.maxRuntime then
+		self:stop()
+		return false, "workflow max runtime exceeded"
+	end
+
 	local plan = self.plan or self:refreshPlan()
 	local payload = data or {}
 
@@ -94,6 +107,13 @@ function WorkflowRunner:signal(signal, data)
 		payload.inventory = plan.inventory
 	end
 	self.target = payload.target or self.target
+	local currentState = self.machine:current()
+	local definitionState = self.definition.states[currentState] or {}
+	local predictedState = definitionState.on and definitionState.on[signal]
+	if currentState == "sell" and predictedState == self.definition.initial and self.cycleCount >= self.maxCycles then
+		self:stop()
+		return false, "workflow max cycles reached"
+	end
 
 	local valid, reason = self.validator:check(self.machine, signal, payload, plan)
 	if not valid then
@@ -103,6 +123,9 @@ function WorkflowRunner:signal(signal, data)
 	local ok, nextState = self.machine:send(signal, payload)
 	if not ok then
 		return false, nextState
+	end
+	if currentState == "sell" and nextState == self.definition.initial then
+		self.cycleCount += 1
 	end
 
 	self.context.logger:info("Workflow", ("transition %s -> %s"):format(signal, nextState), {
@@ -134,6 +157,7 @@ function WorkflowRunner:stop()
 	end
 	self.plan = nil
 	self.target = nil
+	self.startedAt = nil
 	self.context.logger:info("Workflow", "stopped (dry-run)", { workflowId = self.definition.id })
 	return true
 end
@@ -146,6 +170,9 @@ function WorkflowRunner:getSnapshot()
 		state = self.machine:current(),
 		transitionCount = self.machine.transitionCount,
 		dryRun = self.dryRun,
+		cycleCount = self.cycleCount,
+		runtime = self.startedAt and math.max(0, os.clock() - self.startedAt) or 0,
+		limits = { maxCycles = self.maxCycles, maxRuntime = self.maxRuntime },
 		plan = copyPlan(self.plan),
 		lastObservation = self.lastObservation,
 	}

@@ -232,6 +232,16 @@ function WorkflowPage.create(context, parent)
 		truncate = Enum.TextTruncate.AtEnd,
 	})
 
+	local safetyLabel = Components.label(planCard, {
+		text = "Guard  —",
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.textFaint,
+		position = UDim2.fromOffset(0, 184),
+		size = UDim2.new(1, 0, 0, 18),
+		truncate = Enum.TextTruncate.AtEnd,
+	})
+
 	local maid = Maid.new()
 
 	local function render()
@@ -259,6 +269,13 @@ function WorkflowPage.create(context, parent)
 			or "Preview  unavailable until a target is selected"
 		local observation = snapshot.lastObservation
 		evidenceLabel.Text = "Evidence  " .. (observation and text(observation.type, "observed") or "—")
+		local limits = snapshot.limits or {}
+		safetyLabel.Text = ("Guard  %d/%d cycles · %.0f/%.0fs runtime"):format(
+			snapshot.cycleCount or 0,
+			limits.maxCycles or 0,
+			snapshot.runtime or 0,
+			limits.maxRuntime or 0
+		)
 
 		for stateId, step in pairs(stepLabels) do
 			local active = stateId == machineState
