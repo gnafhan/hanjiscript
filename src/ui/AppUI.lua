@@ -97,6 +97,12 @@ function AppUI:notify(options)
 	return nil
 end
 
+function AppUI:setBackdropEnabled(enabled)
+	if self._backdrop then
+		self._backdrop.Visible = enabled == true
+	end
+end
+
 function AppUI:_buildScreen()
 	local parent = getGuiParent()
 
@@ -152,6 +158,20 @@ function AppUI:_buildScreen()
 		parent = parent,
 	})
 
+	-- Application backdrop, deliberately separate from any adapter-provided
+	-- world labels.  This makes the window read as a focused overlay on bright
+	-- Roblox experiences without capturing pointer or keyboard input.
+	self._backdrop = Components.create("Frame", {
+		Name = "Backdrop",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(2, 6, 14),
+		BackgroundTransparency = 0.42,
+		BorderSizePixel = 0,
+		Visible = self.context.config:get("ui.backdropEnabled", true),
+		ZIndex = 1,
+		parent = self._screen,
+	})
+
 	self._notifications = Notifications.new(self._screen)
 end
 
@@ -170,7 +190,7 @@ function AppUI:_buildWindow()
 	})
 
 	Components.corner(window, Theme.Radius.xl)
-	Components.stroke(window, palette.border)
+	Components.stroke(window, palette.borderStrong)
 	Components.gradient(window, ColorSequence.new({
 		ColorSequenceKeypoint.new(0, palette.backgroundTop),
 		ColorSequenceKeypoint.new(1, palette.background),

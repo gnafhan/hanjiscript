@@ -18,6 +18,7 @@ return {
 	ui = {
 		enabled = true,
 		overlayEnabled = false,
+		backdropEnabled = true,
 		theme = "dark",
 		startVisible = true,
 	},

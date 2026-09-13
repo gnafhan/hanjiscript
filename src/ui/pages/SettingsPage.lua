@@ -56,19 +56,22 @@ function SettingsPage.create(context, parent)
 		layoutOrder = 0,
 	})
 
-	local overlayRow = Components.row(preferences, {
-		title = "Overlay",
-		subtitle = "Draw entity labels over the world",
+	local backdropRow = Components.row(preferences, {
+		title = "Interface Backdrop",
+		subtitle = "Dim the game while HanjiScript is open",
 		layoutOrder = 1,
 	})
 
-	local overlayToggle = Components.toggle(overlayRow.right, {
-		value = context.config:get("ui.overlayEnabled", false),
+	local backdropToggle = Components.toggle(backdropRow.right, {
+		value = context.config:get("ui.backdropEnabled", true),
 		position = UDim2.fromScale(0.5, 0.5),
 		anchorPoint = Vector2.new(0.5, 0.5),
 	}, function(value)
-		context.config:set("ui.overlayEnabled", value)
-		context.logger:info("Settings", ("overlay %s"):format(value and "enabled" or "disabled"))
+		context.config:set("ui.backdropEnabled", value)
+		if context.ui then
+			context.ui:setBackdropEnabled(value)
+		end
+		context.logger:info("Settings", ("interface backdrop %s"):format(value and "enabled" or "disabled"))
 	end)
 
 	local logRow = Components.row(preferences, {
@@ -178,7 +181,7 @@ function SettingsPage.create(context, parent)
 	end
 
 	local function refresh()
-		overlayToggle.set(context.config:get("ui.overlayEnabled", false))
+		backdropToggle.set(context.config:get("ui.backdropEnabled", true))
 
 		local logLabel = buttonLabel(logButton)
 		if logLabel then

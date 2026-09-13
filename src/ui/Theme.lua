@@ -46,7 +46,7 @@ Theme.Radius = {
 	sm = 6,
 	md = 9,
 	lg = 12,
-	xl = 16,
+	xl = 22,
 	pill = 999,
 }
 
