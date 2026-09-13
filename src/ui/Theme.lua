@@ -1,29 +1,29 @@
 local Theme = {}
 
 Theme.Dark = {
-	background = Color3.fromRGB(10, 11, 15),
-	backgroundTop = Color3.fromRGB(19, 20, 28),
+	background = Color3.fromRGB(13, 14, 19),
+	backgroundTop = Color3.fromRGB(24, 26, 35),
 
-	surface = Color3.fromRGB(19, 20, 26),
-	surfaceAlt = Color3.fromRGB(26, 27, 35),
-	surfaceHover = Color3.fromRGB(35, 37, 47),
-	surfaceActive = Color3.fromRGB(43, 46, 60),
+	surface = Color3.fromRGB(26, 28, 37),
+	surfaceAlt = Color3.fromRGB(34, 37, 48),
+	surfaceHover = Color3.fromRGB(45, 49, 63),
+	surfaceActive = Color3.fromRGB(56, 61, 79),
 
-	border = Color3.fromRGB(39, 41, 53),
-	borderStrong = Color3.fromRGB(58, 61, 78),
+	border = Color3.fromRGB(51, 55, 71),
+	borderStrong = Color3.fromRGB(78, 84, 106),
 
-	text = Color3.fromRGB(237, 239, 246),
-	textSecondary = Color3.fromRGB(172, 176, 190),
-	textMuted = Color3.fromRGB(118, 122, 138),
-	textFaint = Color3.fromRGB(88, 92, 106),
+	text = Color3.fromRGB(246, 247, 252),
+	textSecondary = Color3.fromRGB(194, 199, 214),
+	textMuted = Color3.fromRGB(144, 150, 168),
+	textFaint = Color3.fromRGB(106, 112, 130),
 
-	accent = Color3.fromRGB(105, 137, 255),
-	accentHover = Color3.fromRGB(129, 157, 255),
-	accentSoft = Color3.fromRGB(45, 55, 96),
+	accent = Color3.fromRGB(112, 143, 255),
+	accentHover = Color3.fromRGB(139, 166, 255),
+	accentSoft = Color3.fromRGB(52, 64, 110),
 
-	success = Color3.fromRGB(74, 222, 128),
-	warn = Color3.fromRGB(250, 204, 21),
-	danger = Color3.fromRGB(248, 113, 113),
+	success = Color3.fromRGB(80, 226, 138),
+	warn = Color3.fromRGB(252, 211, 77),
+	danger = Color3.fromRGB(248, 122, 122),
 	info = Color3.fromRGB(96, 165, 250),
 
 	shadow = Color3.fromRGB(0, 0, 0),

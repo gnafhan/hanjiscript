@@ -140,7 +140,7 @@ function AppUI:_buildWindow()
 		BackgroundColor3 = palette.background,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		GroupTransparency = 1,
+		GroupTransparency = 0,
 		ZIndex = 2,
 		parent = self._screen,
 	})
@@ -160,7 +160,7 @@ function AppUI:_buildTopbar()
 		Name = "Topbar",
 		Size = UDim2.new(1, 0, 0, Layout.topbarHeight),
 		BackgroundColor3 = palette.backgroundTop,
-		BackgroundTransparency = 0.35,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ZIndex = 3,
 		parent = self._window,
@@ -246,8 +246,8 @@ function AppUI:_buildBody()
 	local sidebar = Components.create("Frame", {
 		Name = "Sidebar",
 		Size = UDim2.fromOffset(Layout.sidebarWidth, 1),
-		BackgroundColor3 = palette.background,
-		BackgroundTransparency = 0.4,
+		BackgroundColor3 = palette.surface,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		parent = body,
 	})
@@ -339,7 +339,7 @@ function AppUI:_buildStatusbar()
 		Position = UDim2.new(0, 0, 1, -Layout.statusbarHeight),
 		Size = UDim2.new(1, 0, 0, Layout.statusbarHeight),
 		BackgroundColor3 = palette.backgroundTop,
-		BackgroundTransparency = 0.25,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ZIndex = 3,
 		parent = self._window,
@@ -402,7 +402,7 @@ function AppUI:_mountPages()
 			Name = "Host_" .. pageModule.id,
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
-			GroupTransparency = 1,
+			GroupTransparency = 0,
 			Visible = false,
 			parent = self._pageHost,
 		})
@@ -541,8 +541,7 @@ function AppUI:_applyVisibility(visible)
 	self._screen.Enabled = visible == true
 
 	if visible then
-		self._window.GroupTransparency = 1
-		Motion.tween(self._window, TweenInfo.new(0.34, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { GroupTransparency = 0 })
+		self._window.GroupTransparency = 0
 	end
 end
 
@@ -554,7 +553,7 @@ function AppUI:_applyMinimized(minimized)
 	if minimized then
 		Motion.tween(self._window, Theme.Motion.easeInOut, {
 			Size = UDim2.fromOffset(self._expandedSize.X.Offset, Layout.topbarHeight + Layout.statusbarHeight),
-			GroupTransparency = 0.15,
+			GroupTransparency = 0,
 		})
 	else
 		Motion.tween(self._window, Theme.Motion.easeInOut, { Size = self._expandedSize, GroupTransparency = 0 })
@@ -576,8 +575,8 @@ function AppUI:_applyPage(activeId)
 
 	self._activePage = activeId
 	host.Visible = true
-	host.GroupTransparency = 1
-	host.Position = UDim2.fromOffset(0, 10)
+	host.GroupTransparency = 0
+	host.Position = UDim2.fromOffset(0, 12)
 
 	Motion.tween(host, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
 		GroupTransparency = 0,
@@ -724,12 +723,12 @@ function AppUI:mount()
 		self.state:set("minimized", not self.state:get("minimized"))
 	end)
 
-	self:showPage(self.state:get("activePage"))
+	self:_applyPage(self.state:get("activePage"))
 	self:_applyRecorderStatus(self.state:get("recorderStatus", "idle"))
 
 	if self.state:get("visible", true) then
 		self._screen.Enabled = true
-		Motion.tween(self._window, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { GroupTransparency = 0 })
+		self._window.GroupTransparency = 0
 	else
 		self._screen.Enabled = false
 	end
