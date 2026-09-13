@@ -20,6 +20,22 @@ function EntityClassifier.classify(instance, assets)
 			end
 		end
 	end
+	-- Keep adapter-agnostic semantic aliases available to selectors and the
+	-- overlay even when a place uses the shorter CollectionService tag names.
+	local function addAlias(alias)
+		for _, existing in ipairs(tags) do
+			if existing == alias then return end
+		end
+		table.insert(tags, alias)
+	end
+	local function has(expected)
+		for _, existing in ipairs(tags) do
+			if existing == expected then return true end
+		end
+		return false
+	end
+	if has("collectible") or has("pickup") or has("item") then addAlias("collectible-candidate") end
+	if has("seller") or has("vendor") or has("merchant") or has("shop") then addAlias("seller-candidate") end
 	return tags
 end
 return EntityClassifier

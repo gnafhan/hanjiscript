@@ -27,14 +27,17 @@ end
 
 local function isInteresting(entity)
 	return hasTag(entity, "collectible-candidate")
+		or hasTag(entity, "collectible")
 		or hasTag(entity, "seller-candidate")
+		or hasTag(entity, "seller")
+		or hasTag(entity, "vendor")
 		or hasTag(entity, "interactive")
 		or hasTag(entity, "asset-bearing")
 end
 
 local function markerKind(entity)
-	if hasTag(entity, "seller-candidate") then return "SELLER", Theme.Dark.warn end
-	if hasTag(entity, "collectible-candidate") then return "COLLECTIBLE", Theme.Dark.success end
+	if hasTag(entity, "seller-candidate") or hasTag(entity, "seller") or hasTag(entity, "vendor") then return "SELLER", Theme.Dark.warn end
+	if hasTag(entity, "collectible-candidate") or hasTag(entity, "collectible") then return "COLLECTIBLE", Theme.Dark.success end
 	if hasTag(entity, "interactive") then return "INTERACTIVE", Theme.Dark.info end
 	return "ASSET", Theme.Dark.accent
 end
@@ -184,6 +187,7 @@ function EntityOverlay:start()
 	self.folder.Name = "HanjiScriptEntityOverlay"
 	self.folder.Parent = parent
 	self.maid:Add(self.context.eventBus:on(EventTypes.WorldEntityAdded, function() self.dirty = true end))
+	self.maid:Add(self.context.eventBus:on(EventTypes.WorldEntityUpdated, function() self.dirty = true end))
 	self.maid:Add(self.context.eventBus:on(EventTypes.WorldEntityRemoved, function() self.dirty = true end))
 	self.maid:Add(game:GetService("RunService").Heartbeat:Connect(function(delta)
 		self.elapsed += delta

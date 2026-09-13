@@ -66,6 +66,30 @@ function WorldModel:remove(instance)
 	self.context.eventBus:emit(EventTypes.WorldEntityRemoved, value)
 end
 
+function WorldModel:refresh(instance)
+	local workspaceService = game:GetService("Workspace")
+	local ok, isLive = pcall(function()
+		return instance and instance:IsDescendantOf(workspaceService)
+	end)
+	if not ok or not isLive then
+		self:remove(instance)
+		return nil
+	end
+	local previous = self.entities[instance]
+	if not previous then
+		return self:add(instance)
+	end
+
+	local value = entity(instance)
+	self.entities[instance] = value
+	self.spatial:refresh(value)
+	self.context.eventBus:emit(EventTypes.WorldEntityUpdated, {
+		entity = value,
+		previous = previous,
+	})
+	return value
+end
+
 function WorldModel:list(query)
 	local result = {}
 	query = (query or ""):lower()
@@ -154,6 +178,23 @@ function WorldModel:start()
 	self.maid:Add(workspaceService.DescendantRemoving:Connect(function(instance)
 		self:remove(instance)
 	end))
+
+	-- CollectionService tags can be applied after spawn. Listen only to the
+	-- semantic tags used by the universal classifier so recon stays current
+	-- without attaching one AttributeChanged connection per instance.
+	local ok, collectionService = pcall(game.GetService, game, "CollectionService")
+	if ok and collectionService then
+		for _, tag in ipairs({ "Collectible", "Seller", "Vendor", "Merchant", "Shop", "Pickup", "Item" }) do
+			local addedOk, addedSignal = pcall(collectionService.GetInstanceAddedSignal, collectionService, tag)
+			if addedOk and addedSignal then
+				self.maid:Add(addedSignal:Connect(function(instance) self:refresh(instance) end))
+			end
+			local removedOk, removedSignal = pcall(collectionService.GetInstanceRemovedSignal, collectionService, tag)
+			if removedOk and removedSignal then
+				self.maid:Add(removedSignal:Connect(function(instance) self:refresh(instance) end))
+			end
+		end
+	end
 	return true
 end
 

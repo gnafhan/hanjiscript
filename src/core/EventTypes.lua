@@ -6,6 +6,7 @@ return {
 	AdapterResolved = "adapter.resolved",
 
 	WorldEntityAdded = "world.entity_added",
+	WorldEntityUpdated = "world.entity_updated",
 	WorldEntityRemoved = "world.entity_removed",
 	WorldChanged = "world.changed",
 
