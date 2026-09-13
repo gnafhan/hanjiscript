@@ -95,11 +95,15 @@ function InspectorPage.create(context, parent)
 		gap = Theme.Spacing.sm,
 	})
 
+	local allEntries = {}
+	local render
+	local searchBox
+
 	local scanButton = Components.button(buttonRow, {
-		text = "Build Tree",
+		text = "Scan tree",
 		variant = "primary",
 		icon = "inspector",
-		size = UDim2.fromOffset(150, 34),
+		size = UDim2.fromOffset(126, 34),
 		layoutOrder = 1,
 	})
 
@@ -107,19 +111,45 @@ function InspectorPage.create(context, parent)
 		text = "Clear",
 		variant = "ghost",
 		icon = "close",
-		size = UDim2.fromOffset(90, 34),
+		size = UDim2.fromOffset(76, 34),
 		layoutOrder = 2,
 	}, function()
+		allEntries = {}
+		if searchBox then
+			searchBox.Text = ""
+		end
 		render({})
 	end)
+
+	searchBox = Components.create("TextBox", {
+		Name = "Search",
+		Text = "",
+		PlaceholderText = "Filter name, class, path or tag",
+		PlaceholderColor3 = palette.textFaint,
+		TextColor3 = palette.text,
+		TextSize = Theme.Text.caption,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
+		BackgroundColor3 = palette.surfaceAlt,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		ClearTextOnFocus = false,
+		Size = UDim2.fromOffset(230, 34),
+		LayoutOrder = 3,
+		parent = buttonRow,
+	})
+	Components.corner(searchBox, Theme.Radius.md)
+	Components.stroke(searchBox, palette.border)
+	Components.padding(searchBox, { left = 10, right = 10 })
+	Components.applyFont(searchBox, Theme.Font.body)
 
 	local result = Components.label(buttonRow, {
 		text = "not scanned",
 		font = Theme.Font.mono,
 		textSize = Theme.Text.micro,
 		color = palette.textMuted,
-		size = UDim2.new(1, -260, 1, 0),
-		layoutOrder = 3,
+		size = UDim2.new(1, -452, 1, 0),
+		layoutOrder = 4,
 	})
 
 	local main = Components.create("Frame", {
@@ -248,7 +278,30 @@ function InspectorPage.create(context, parent)
 		detail.tags.Text = entry.tags and table.concat(entry.tags, ", ") or "—"
 	end
 
-	local function render(entries)
+	local function matches(entry, query)
+		if query == "" then
+			return true
+		end
+
+		local assetText = {}
+		for _, asset in pairs(entry.assets or {}) do
+			table.insert(assetText, tostring(asset))
+		end
+		for _, ref in ipairs(entry.assetRefs or {}) do
+			table.insert(assetText, tostring(ref.id or ""))
+		end
+
+		local haystack = table.concat({
+			entry.name or "",
+			entry.className or "",
+			entry.path or "",
+			table.concat(entry.tags or {}, " "),
+			table.concat(assetText, " "),
+		}, " "):lower()
+		return haystack:find(query, 1, true) ~= nil
+	end
+
+	function render(entries)
 		for _, child in ipairs(scroll:GetChildren()) do
 			if child:IsA("GuiObject") then
 				child:Destroy()
@@ -313,14 +366,27 @@ function InspectorPage.create(context, parent)
 			end)
 		end
 
-		result.Text = ("%d tree nodes"):format(#entries)
+		result.Text = ("%d / %d tree nodes"):format(#entries, #allEntries)
+	end
+
+	local function applyFilter()
+		local query = searchBox.Text:lower():gsub("^%s+", ""):gsub("%s+$", "")
+		local filtered = {}
+		for _, entry in ipairs(allEntries) do
+			if matches(entry, query) then
+				table.insert(filtered, entry)
+			end
+		end
+		render(filtered)
 	end
 
 	scanButton.MouseButton1Click:Connect(function()
-		local entries = context.world and context.world:tree(600) or scanWorkspace()
-		render(entries)
-		context.logger:info("Inspector", ("scanned %d instances"):format(#entries))
+		allEntries = context.world and context.world:tree(600) or scanWorkspace()
+		applyFilter()
+		context.logger:info("Inspector", ("scanned %d instances"):format(#allEntries))
 	end)
+
+	searchBox:GetPropertyChangedSignal("Text"):Connect(applyFilter)
 
 	local function refresh() end
 
