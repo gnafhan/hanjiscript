@@ -1,4 +1,4 @@
-local BASE_URL = "https://raw.githubusercontent.com/gnafhan/hanjiscript/10fb50db0b90509bf1c6ba605a34ff2e2a5f2552"
+local BASE_URL = "https://raw.githubusercontent.com/gnafhan/hanjiscript/d0d31bfee0152a31c7f1c4ddd17e7f237ef41b29"
 
 local function getFetch()
 	if type(http_request) == "function" then
