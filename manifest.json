@@ -20,6 +20,8 @@
     "adapters.UniversalAdapter": "src/adapters/UniversalAdapter.lua",
 	"world.WorldModel": "src/world/WorldModel.lua",
 	"world.EntityClassifier": "src/world/EntityClassifier.lua",
+	"world.AssetResolver": "src/world/AssetResolver.lua",
+	"world.SpatialIndex": "src/world/SpatialIndex.lua",
 	"sensors.MovementSensor": "src/sensors/MovementSensor.lua",
 	"sensors.InteractionSensor": "src/sensors/InteractionSensor.lua",
 	"sensors.InventorySensor": "src/sensors/InventorySensor.lua",
