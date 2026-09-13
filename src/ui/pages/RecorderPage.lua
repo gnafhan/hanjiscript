@@ -222,6 +222,21 @@ function RecorderPage.create(context, parent)
 
 	maid:Add(context.logger.Emitted:Connect(append))
 
+	local recordedTypes = {
+		"movement.sample",
+		"interaction.completed",
+		"world.entity_added",
+		"world.entity_removed",
+	}
+	for _, eventType in ipairs(recordedTypes) do
+		maid:Add(context.eventBus:on(eventType, function(data)
+			local recorder = context.recorder
+			if recorder and recorder.status == "running" then
+				append({ timestamp = os.clock() - recorder.startedAt, tag = eventType, message = data.target or data.name or data.path or "observed", level = 20 })
+			end
+		end))
+	end
+
 	local function setStatus(status)
 		local color = STATUS_COLORS[status] or palette.textMuted
 

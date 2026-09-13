@@ -234,10 +234,11 @@ function InspectorPage.create(context, parent)
 		end
 
 		placeholder.Visible = false
-		detail.name.Text = entry.Name
-		detail.class.Text = entry.ClassName
-		detail.path.Text = entry:GetFullName()
-		detail.children.Text = tostring(#entry:GetChildren())
+		local instance = entry.instance or entry
+		detail.name.Text = entry.name or instance.Name
+		detail.class.Text = entry.className or instance.ClassName
+		detail.path.Text = entry.path or instance:GetFullName()
+		detail.children.Text = tostring(#instance:GetChildren())
 	end
 
 	local function render(entries)
@@ -251,6 +252,7 @@ function InspectorPage.create(context, parent)
 		select(nil)
 
 		for index, entry in ipairs(entries) do
+			local instance = entry.instance or entry
 			local row = Components.create("TextButton", {
 				Name = "Entry",
 				Text = "",
@@ -275,7 +277,7 @@ function InspectorPage.create(context, parent)
 			})
 
 			Components.label(row, {
-				text = entry.Name,
+				text = entry.name or instance.Name,
 				font = Theme.Font.medium,
 				textSize = Theme.Text.caption,
 				color = palette.text,
@@ -284,7 +286,7 @@ function InspectorPage.create(context, parent)
 				size = UDim2.new(1, -180, 1, 0),
 			})
 
-			classBadge(row, entry.ClassName, palette.accent, UDim2.new(1, -70, 0.5, -9))
+			classBadge(row, entry.className or instance.ClassName, palette.accent, UDim2.new(1, -70, 0.5, -9))
 
 			row.MouseEnter:Connect(function()
 				if selectedRow ~= row then
@@ -307,7 +309,7 @@ function InspectorPage.create(context, parent)
 	end
 
 	scanButton.MouseButton1Click:Connect(function()
-		local entries = scanWorkspace()
+		local entries = context.world and context.world:list() or scanWorkspace()
 		render(entries)
 		context.logger:info("Inspector", ("scanned %d instances"):format(#entries))
 	end)

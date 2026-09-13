@@ -19,6 +19,10 @@ local ExperienceDetector = require("runtime.ExperienceDetector")
 local CapabilityDetector = require("runtime.CapabilityDetector")
 
 local AppUI = require("ui.AppUI")
+local WorldModel = require("world.WorldModel")
+local MovementSensor = require("sensors.MovementSensor")
+local InteractionSensor = require("sensors.InteractionSensor")
+local SessionRecorder = require("recorder.SessionRecorder")
 
 local Application = {}
 Application.__index = Application
@@ -56,18 +60,24 @@ function Application:_registerCommands()
 	end)
 
 	commandBus:register("recorder.start", function()
+		context.recorder:start()
+		context.movementSensor:start()
 		setRecorderStatus("running")
 	end)
 
 	commandBus:register("recorder.pause", function()
+		context.recorder:pause()
 		setRecorderStatus("paused")
 	end)
 
 	commandBus:register("recorder.resume", function()
+		context.recorder:resume()
 		setRecorderStatus("running")
 	end)
 
 	commandBus:register("recorder.stop", function()
+		context.movementSensor:stop()
+		context.recorder:stop()
 		setRecorderStatus("stopped")
 	end)
 
@@ -130,6 +140,12 @@ function Application:init()
 	eventBus:emit(EventTypes.AdapterResolved, { adapter = adapter and adapter.id or "none" })
 
 	context.features = FeatureManager.new(context)
+	context.world = WorldModel.new(context)
+	context.world:start()
+	context.movementSensor = MovementSensor.new(context)
+	context.interactionSensor = InteractionSensor.new(context)
+	context.interactionSensor:start()
+	context.recorder = SessionRecorder.new(context)
 
 	local ui = AppUI.new(context)
 	context.ui = ui
@@ -185,6 +201,10 @@ function Application:stop()
 	if context.adapter and type(context.adapter.stop) == "function" then
 		context.adapter:stop()
 	end
+	if context.movementSensor then context.movementSensor:stop() end
+	if context.interactionSensor then context.interactionSensor:stop() end
+	if context.recorder then context.recorder:stop() end
+	if context.world then context.world:destroy() end
 
 	self.lifecycle:set(Lifecycle.States.Completed)
 	context.eventBus:emit(EventTypes.ApplicationStopped, { at = os.clock() })
