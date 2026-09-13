@@ -12,6 +12,11 @@ local function snapshot(player)
 	return out
 end
 local function count(values) local n=0; for _,v in pairs(values) do n+=v end; return n end
+local function changed(before, after)
+	for key, value in pairs(before) do if after[key] ~= value then return true end end
+	for key, value in pairs(after) do if before[key] ~= value then return true end end
+	return false
+end
 function InventorySensor.new(context) return setmetatable({context=context,maid=Maid.new(),running=false,current={}},InventorySensor) end
 function InventorySensor:start()
 	if self.running then return end; self.running=true
@@ -20,8 +25,12 @@ function InventorySensor:start()
 	self.maid:Add(game:GetService("RunService").Heartbeat:Connect(function()
 		if not self.running or os.clock()-last<0.5 then return end; last=os.clock()
 		local nextValue=snapshot(player); local before=count(self.current); local after=count(nextValue)
-		if before~=after then self.context.eventBus:emit(EventTypes.InventoryChanged,{before=before,after=after,delta=after-before,items=nextValue}); self.current=nextValue end
+		if changed(self.current, nextValue) then self.context.eventBus:emit(EventTypes.InventoryChanged,{before=before,after=after,delta=after-before,items=nextValue}); self.current=nextValue end
 	end))
 end
 function InventorySensor:stop() self.running=false; self.maid:Clean() end
+function InventorySensor:getSnapshot()
+	local out={}; for key,value in pairs(self.current) do out[key]=value end; return out
+end
+function InventorySensor:getCount() return count(self.current) end
 return InventorySensor

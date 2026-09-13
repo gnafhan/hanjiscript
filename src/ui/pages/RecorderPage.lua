@@ -227,13 +227,24 @@ function RecorderPage.create(context, parent)
 		"interaction.completed",
 		"world.entity_added",
 		"world.entity_removed",
+		"inventory.changed",
 		"semantic.action",
+		"workflow.state_changed",
+		"workflow.plan_updated",
 	}
 	for _, eventType in ipairs(recordedTypes) do
 		maid:Add(context.eventBus:on(eventType, function(data)
 			local recorder = context.recorder
 			if recorder and recorder.status == "running" then
-				append({ timestamp = os.clock() - recorder.startedAt, tag = eventType, message = data.target or data.name or data.path or "observed", level = 20 })
+				local message = data.target or data.name or data.path or data.kind or data.state
+				if eventType == "inventory.changed" and data.before and data.after then
+					message = ("%d → %d items"):format(data.before, data.after)
+				elseif eventType == "semantic.action" and data.kind then
+					message = data.kind .. (data.target and (" · " .. tostring(data.target)) or "")
+				elseif eventType == "workflow.state_changed" and data.state then
+					message = data.previousState and (data.previousState .. " → " .. data.state) or data.state
+				end
+				append({ timestamp = os.clock() - recorder.startedAt, tag = eventType, message = message or "observed", level = 20 })
 			end
 		end))
 	end

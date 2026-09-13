@@ -7,6 +7,7 @@ function EntityClassifier.classify(instance, assets)
 	if next(assets) then table.insert(tags,"asset-bearing") end
 	local name=instance.Name:lower()
 	if name:find("item") or name:find("drop") or name:find("collect") then table.insert(tags,"collectible-candidate") end
+	if name:find("sell") or name:find("shop") or name:find("merchant") or name:find("vendor") then table.insert(tags,"seller-candidate") end
 	return tags
 end
 return EntityClassifier

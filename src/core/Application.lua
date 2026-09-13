@@ -25,6 +25,8 @@ local InteractionSensor = require("sensors.InteractionSensor")
 local InventorySensor = require("sensors.InventorySensor")
 local SessionRecorder = require("recorder.SessionRecorder")
 local EventCorrelator = require("recorder.EventCorrelator")
+local Workflow = require("automation.Workflow")
+local WorkflowRunner = require("automation.WorkflowRunner")
 
 local Application = {}
 Application.__index = Application
@@ -84,15 +86,24 @@ function Application:_registerCommands()
 	end)
 
 	commandBus:register("automation.start", function()
+		context.workflowRunner:start()
 		uiState:set("automationStatus", "running")
 		context.eventBus:emit(EventTypes.AutomationStateChanged, { status = "running" })
 		logger:info("Automation", "started")
 	end)
 
 	commandBus:register("automation.stop", function()
+		context.workflowRunner:stop()
 		uiState:set("automationStatus", "idle")
 		context.eventBus:emit(EventTypes.AutomationStateChanged, { status = "idle" })
 		logger:info("Automation", "stopped")
+	end)
+
+	commandBus:register("automation.advance", function()
+		local ok, err = context.workflowRunner:advance()
+		if not ok then
+			logger:warn("Automation", err)
+		end
 	end)
 
 	commandBus:register("app.shutdown", function()
@@ -152,6 +163,7 @@ function Application:init()
 	context.recorder = SessionRecorder.new(context)
 	context.eventCorrelator = EventCorrelator.new(context)
 	context.eventCorrelator:start()
+	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
 
 	local ui = AppUI.new(context)
 	context.ui = ui
@@ -212,6 +224,7 @@ function Application:stop()
 	if context.inventorySensor then context.inventorySensor:stop() end
 	if context.recorder then context.recorder:stop() end
 	if context.eventCorrelator then context.eventCorrelator:stop() end
+	if context.workflowRunner then context.workflowRunner:stop() end
 	if context.world then context.world:destroy() end
 
 	self.lifecycle:set(Lifecycle.States.Completed)
@@ -236,6 +249,10 @@ function Application:destroy()
 	local context = self.context
 
 	if context then
+		if context.workflowRunner and type(context.workflowRunner.destroy) == "function" then
+			context.workflowRunner:destroy()
+		end
+
 		if context.logger then
 			context.logger:destroy()
 		end

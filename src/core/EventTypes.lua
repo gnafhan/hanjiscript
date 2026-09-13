@@ -20,6 +20,7 @@ return {
 	RecorderStateChanged = "recorder.state_changed",
 	AutomationStateChanged = "automation.state_changed",
 	WorkflowStateChanged = "workflow.state_changed",
+	WorkflowPlanUpdated = "workflow.plan_updated",
 	SemanticAction = "semantic.action",
 
 	LogEmitted = "log.emitted",

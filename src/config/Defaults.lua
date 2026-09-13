@@ -11,6 +11,7 @@ return {
 	automation = {
 		enabled = false,
 		retryCount = 3,
+		inventoryCapacity = 20,
 		maxCycles = 100,
 		maxRuntime = 600,
 	},

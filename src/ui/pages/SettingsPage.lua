@@ -11,7 +11,7 @@ local SettingsPage = {
 	title = "Settings",
 	subtitle = "Configuration and diagnostics",
 	icon = "settings",
-	order = 4,
+	order = 5,
 }
 
 local LOG_LEVELS = { "debug", "info", "warn", "error" }
