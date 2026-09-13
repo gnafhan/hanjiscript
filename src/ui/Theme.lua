@@ -59,12 +59,28 @@ Theme.Text = {
 	mono = 12,
 }
 
+local function buildFont(family, weightName, fallback)
+	local ok, font = pcall(function()
+		return Font.new(
+			"rbxasset://fonts/families/" .. family .. ".json",
+			Enum.FontWeight[weightName],
+			Enum.FontStyle.Normal
+		)
+	end)
+
+	if ok and font ~= nil then
+		return font
+	end
+
+	return fallback
+end
+
 Theme.Font = {
-	display = Enum.Font.GothamBold,
-	title = Enum.Font.GothamBold,
-	medium = Enum.Font.GothamMedium,
-	body = Enum.Font.Gotham,
-	mono = Enum.Font.Code,
+	display = buildFont("Montserrat", "Bold", Enum.Font.GothamBold),
+	title = buildFont("Montserrat", "Bold", Enum.Font.GothamBold),
+	medium = buildFont("Montserrat", "Medium", Enum.Font.GothamMedium),
+	body = buildFont("Montserrat", "Regular", Enum.Font.Gotham),
+	mono = buildFont("RobotoMono", "Regular", Enum.Font.Code),
 }
 
 Theme.Motion = {

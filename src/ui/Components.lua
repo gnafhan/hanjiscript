@@ -35,7 +35,6 @@ local TEXT_OVERRIDES = {
 	BackgroundTransparency = true,
 	BorderSizePixel = true,
 	Text = true,
-	Font = true,
 	TextSize = true,
 	TextColor3 = true,
 	TextXAlignment = true,
@@ -76,6 +75,26 @@ local function create(className, props)
 end
 
 Components.create = create
+
+local function applyFont(instance, value)
+	if value == nil then
+		return
+	end
+
+	local kind
+
+	if type(typeof) == "function" then
+		kind = typeof(value)
+	end
+
+	if kind == "Font" then
+		instance.FontFace = value
+	else
+		instance.Font = value
+	end
+end
+
+Components.applyFont = applyFont
 
 local function corner(parent, radius)
 	return create("UICorner", {
@@ -152,7 +171,6 @@ function Components.label(parent, props)
 	local resolved = {
 		Name = props.name or "Label",
 		Text = props.text or "",
-		Font = props.font or Theme.Font.body,
 		TextSize = props.textSize or Theme.Text.body,
 		TextColor3 = props.color or palette.text,
 		TextXAlignment = props.align or Enum.TextXAlignment.Left,
@@ -173,7 +191,10 @@ function Components.label(parent, props)
 	applyOverrides(resolved, props, TEXT_OVERRIDES)
 	resolved.parent = parent
 
-	return create("TextLabel", resolved)
+	local label = create("TextLabel", resolved)
+	applyFont(label, props.font or Theme.Font.body)
+
+	return label
 end
 
 Components.text = Components.label

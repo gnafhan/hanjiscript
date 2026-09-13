@@ -111,6 +111,38 @@ function AppUI:_buildScreen()
 		existing = parent:FindFirstChild("HanjiScript")
 	end
 
+	local cleanupTargets = { parent }
+	local seen = { [parent] = true }
+
+	local players = game:GetService("Players")
+
+	if players and players.LocalPlayer then
+		local playerGui = players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+
+		if playerGui and not seen[playerGui] then
+			seen[playerGui] = true
+			table.insert(cleanupTargets, playerGui)
+		end
+	end
+
+	if type(gethui) == "function" then
+		local ok, hidden = pcall(gethui)
+
+		if ok and hidden and not seen[hidden] then
+			seen[hidden] = true
+			table.insert(cleanupTargets, hidden)
+		end
+	end
+
+	for _, target in ipairs(cleanupTargets) do
+		local leftover = target:FindFirstChild("HanjiScript")
+
+		while leftover do
+			leftover:Destroy()
+			leftover = target:FindFirstChild("HanjiScript")
+		end
+	end
+
 	self._screen = Components.create("ScreenGui", {
 		Name = "HanjiScript",
 		ResetOnSpawn = false,
