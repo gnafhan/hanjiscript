@@ -45,6 +45,7 @@ local function classBadge(parent, text, color, position)
 		BorderSizePixel = 0,
 		AutomaticSize = Enum.AutomaticSize.X,
 		Size = UDim2.fromOffset(0, 18),
+		AnchorPoint = Vector2.new(1, 0.5),
 		Position = position,
 		parent = parent,
 	})
@@ -82,10 +83,17 @@ function InspectorPage.create(context, parent)
 		layoutOrder = 0,
 	})
 
-	local buttonRow = Components.create("Frame", {
+	local buttonRow = Components.create("ScrollingFrame", {
 		Name = "Buttons",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.X,
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 2,
+		ScrollBarImageColor3 = palette.borderStrong,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
 		parent = toolbar,
 	})
 
@@ -176,7 +184,7 @@ function InspectorPage.create(context, parent)
 		font = Theme.Font.mono,
 		textSize = Theme.Text.micro,
 		color = palette.textMuted,
-		size = UDim2.new(1, -620, 1, 0),
+		size = UDim2.fromOffset(220, 34),
 		layoutOrder = 6,
 	})
 
@@ -454,7 +462,7 @@ function InspectorPage.create(context, parent)
 				size = UDim2.new(1, -(172 + indent), 1, 0),
 			})
 
-			classBadge(row, entry.className or instance.ClassName, palette.accent, UDim2.new(1, -70, 0.5, -9))
+			classBadge(row, entry.className or instance.ClassName, palette.accent, UDim2.new(1, -8, 0.5, 0))
 
 			row.MouseEnter:Connect(function()
 				if selectedRow ~= row then
