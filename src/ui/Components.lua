@@ -270,6 +270,7 @@ function Components.button(parent, props, onClick)
 	}
 
 	applyOverrides(resolved, props, { Size = true, Position = true, LayoutOrder = true, Name = true, Visible = true, ZIndex = true, AnchorPoint = true })
+	resolved.parent = parent
 
 	local button = create("TextButton", resolved)
 	corner(button, props.radius or Theme.Radius.md)
