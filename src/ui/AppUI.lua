@@ -12,6 +12,7 @@ local DashboardPage = require("ui.pages.DashboardPage")
 local InspectorPage = require("ui.pages.InspectorPage")
 local RecorderPage = require("ui.pages.RecorderPage")
 local WorkflowPage = require("ui.pages.WorkflowPage")
+local ReplayPage = require("ui.pages.ReplayPage")
 local SettingsPage = require("ui.pages.SettingsPage")
 
 local palette = Theme.Dark
@@ -22,6 +23,7 @@ local PAGE_MODULES = {
 	InspectorPage,
 	RecorderPage,
 	WorkflowPage,
+	ReplayPage,
 	SettingsPage,
 }
 

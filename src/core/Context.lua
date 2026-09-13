@@ -17,6 +17,7 @@ local function defaultFields()
 		workflowRunner = nil,
 		navigator = nil,
 		interactionController = nil,
+		replay = nil,
 		adapters = nil,
 		features = nil,
 		ui = nil,

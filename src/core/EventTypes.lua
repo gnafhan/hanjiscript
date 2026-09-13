@@ -23,6 +23,8 @@ return {
 	WorkflowStateChanged = "workflow.state_changed",
 	WorkflowPlanUpdated = "workflow.plan_updated",
 	SemanticAction = "semantic.action",
+	ReplayStateChanged = "replay.state_changed",
+	ReplayEventApplied = "replay.event_applied",
 
 	LogEmitted = "log.emitted",
 }

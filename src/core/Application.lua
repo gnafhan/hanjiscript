@@ -30,6 +30,7 @@ local Workflow = require("automation.Workflow")
 local WorkflowRunner = require("automation.WorkflowRunner")
 local Navigator = require("automation.Navigator")
 local InteractionController = require("automation.InteractionController")
+local ReplaySession = require("replay.ReplaySession")
 
 local Application = {}
 Application.__index = Application
@@ -85,6 +86,9 @@ function Application:_registerCommands()
 	commandBus:register("recorder.stop", function()
 		context.movementSensor:stop()
 		context.recorder:stop()
+		if context.replay and context.recorder:getSession() then
+			context.replay:load(context.recorder:getSession())
+		end
 		setRecorderStatus("stopped")
 	end)
 
@@ -107,6 +111,22 @@ function Application:_registerCommands()
 		if not ok then
 			logger:warn("Automation", err)
 		end
+	end)
+
+	commandBus:register("replay.play", function()
+		context.replay:play()
+	end)
+
+	commandBus:register("replay.pause", function()
+		context.replay:pause()
+	end)
+
+	commandBus:register("replay.step", function(delta)
+		context.replay:step(delta or 0.25)
+	end)
+
+	commandBus:register("replay.seek", function(time)
+		context.replay:seek(time or 0)
 	end)
 
 	commandBus:register("app.shutdown", function()
@@ -170,6 +190,7 @@ function Application:init()
 	context.analytics:start()
 	context.navigator = Navigator.new(context)
 	context.interactionController = InteractionController.new(context)
+	context.replay = ReplaySession.new(context)
 	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
 
 	local ui = AppUI.new(context)
@@ -234,6 +255,7 @@ function Application:stop()
 	if context.analytics then context.analytics:stop() end
 	if context.workflowRunner then context.workflowRunner:stop() end
 	if context.navigator then context.navigator:destroy() end
+	if context.replay then context.replay:destroy() end
 	if context.world then context.world:destroy() end
 
 	self.lifecycle:set(Lifecycle.States.Completed)
