@@ -123,6 +123,12 @@ function ReplaySession:_apply(event)
 			end
 			self.state.entities[id] = nil
 		end
+	elseif eventType == EventTypes.WorldEntityUpdated then
+		local entity = data.entity or data
+		local id = entity.id or entity.path or entity.name
+		if id then
+			self.state.entities[id] = entity
+		end
 	elseif eventType == EventTypes.WorkflowStateChanged then
 		self.state.workflowState = data.state
 	elseif eventType == EventTypes.SemanticAction then

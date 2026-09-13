@@ -226,6 +226,7 @@ function RecorderPage.create(context, parent)
 		"movement.sample",
 		"interaction.completed",
 		"world.entity_added",
+		"world.entity_updated",
 		"world.entity_removed",
 		"inventory.changed",
 		"semantic.action",
