@@ -166,6 +166,35 @@ function GLYPHS.minimize(container, size, color)
 	})
 end
 
+function GLYPHS.plus(container, size, color)
+	local thickness = math.max(1.6, size * 0.11)
+	part(container, {
+		color = color,
+		anchor = Vector2.new(0.5, 0.5),
+		size = UDim2.fromOffset(size * 0.72, thickness),
+		position = UDim2.fromOffset(size / 2, size / 2),
+		radius = 0.5,
+	})
+	part(container, {
+		color = color,
+		anchor = Vector2.new(0.5, 0.5),
+		size = UDim2.fromOffset(thickness, size * 0.72),
+		position = UDim2.fromOffset(size / 2, size / 2),
+		radius = 0.5,
+	})
+end
+
+function GLYPHS.minus(container, size, color)
+	local thickness = math.max(1.6, size * 0.11)
+	part(container, {
+		color = color,
+		anchor = Vector2.new(0.5, 0.5),
+		size = UDim2.fromOffset(size * 0.72, thickness),
+		position = UDim2.fromOffset(size / 2, size / 2),
+		radius = 0.5,
+	})
+end
+
 function GLYPHS.chevron(container, size, color)
 	local thickness = math.max(1.6, size * 0.12)
 

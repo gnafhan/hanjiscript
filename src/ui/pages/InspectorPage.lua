@@ -96,7 +96,9 @@ function InspectorPage.create(context, parent)
 	})
 
 	local allEntries = {}
+	local expanded = {}
 	local render
+	local visibleEntries
 	local searchBox
 
 	local scanButton = Components.button(buttonRow, {
@@ -121,6 +123,32 @@ function InspectorPage.create(context, parent)
 		render({})
 	end)
 
+	Components.button(buttonRow, {
+		text = "Expand all",
+		variant = "ghost",
+		icon = "plus",
+		size = UDim2.fromOffset(88, 34),
+		layoutOrder = 3,
+	}, function()
+		for _, entry in ipairs(allEntries) do
+			if entry.hasChildren then expanded[entry.path] = true end
+		end
+		render(visibleEntries())
+	end)
+
+	Components.button(buttonRow, {
+		text = "Collapse",
+		variant = "ghost",
+		icon = "minus",
+		size = UDim2.fromOffset(82, 34),
+		layoutOrder = 4,
+	}, function()
+		for _, entry in ipairs(allEntries) do
+			if entry.hasChildren then expanded[entry.path] = false end
+		end
+		render(visibleEntries())
+	end)
+
 	searchBox = Components.create("TextBox", {
 		Name = "Search",
 		Text = "",
@@ -134,8 +162,8 @@ function InspectorPage.create(context, parent)
 		BackgroundTransparency = 0.15,
 		BorderSizePixel = 0,
 		ClearTextOnFocus = false,
-		Size = UDim2.fromOffset(230, 34),
-		LayoutOrder = 3,
+		Size = UDim2.fromOffset(200, 34),
+		LayoutOrder = 5,
 		parent = buttonRow,
 	})
 	Components.corner(searchBox, Theme.Radius.md)
@@ -148,8 +176,8 @@ function InspectorPage.create(context, parent)
 		font = Theme.Font.mono,
 		textSize = Theme.Text.micro,
 		color = palette.textMuted,
-		size = UDim2.new(1, -452, 1, 0),
-		layoutOrder = 4,
+		size = UDim2.new(1, -620, 1, 0),
+		layoutOrder = 6,
 	})
 
 	local main = Components.create("Frame", {
@@ -236,6 +264,7 @@ function InspectorPage.create(context, parent)
 	detail.children = detailRow("Children", 4)
 	detail.assets = detailRow("Assets", 5)
 	detail.tags = detailRow("Tags", 6)
+	detail.attributes = detailRow("Attributes", 7)
 
 	local placeholder = Components.label(detailCard, {
 		text = "Select an instance from the list to inspect it.",
@@ -274,8 +303,18 @@ function InspectorPage.create(context, parent)
 		local assets = entry.assets or {}
 		local values = {}
 		for _, asset in pairs(assets) do if asset and asset ~= "" then table.insert(values, tostring(asset)) end end
+		for _, ref in ipairs(entry.assetRefs or {}) do
+			local value = ref.kind and ref.id and (tostring(ref.kind) .. ": " .. tostring(ref.id)) or ref.id
+			if value then table.insert(values, tostring(value)) end
+		end
 		detail.assets.Text = #values > 0 and table.concat(values, ", ") or "—"
 		detail.tags.Text = entry.tags and table.concat(entry.tags, ", ") or "—"
+		local attributes = {}
+		for key, value in pairs(entry.attributes or {}) do
+			table.insert(attributes, tostring(key) .. "=" .. tostring(value))
+		end
+		table.sort(attributes)
+		detail.attributes.Text = #attributes > 0 and table.concat(attributes, ", ") or "—"
 	end
 
 	local function matches(entry, query)
@@ -299,6 +338,55 @@ function InspectorPage.create(context, parent)
 			table.concat(assetText, " "),
 		}, " "):lower()
 		return haystack:find(query, 1, true) ~= nil
+	end
+
+	local function isExpanded(entry)
+		return expanded[entry.path] ~= false
+	end
+
+	function visibleEntries()
+		local query = searchBox and searchBox.Text:lower():gsub("^%s+", ""):gsub("%s+$", "") or ""
+		local keep = {}
+		if query == "" then
+			for index = 1, #allEntries do keep[index] = true end
+		else
+			for index, entry in ipairs(allEntries) do
+				if matches(entry, query) then
+					keep[index] = true
+					local childDepth = entry.depth or 0
+					for parentIndex = index - 1, 1, -1 do
+						if (allEntries[parentIndex].depth or 0) < childDepth then
+							keep[parentIndex] = true
+							childDepth = allEntries[parentIndex].depth or 0
+							if childDepth == 0 then break end
+						end
+					end
+				end
+			end
+		end
+
+		local result = {}
+		local collapsed = {}
+		for index, entry in ipairs(allEntries) do
+			local depth = entry.depth or 0
+			local hidden = false
+			for parentDepth = 0, depth - 1 do
+				if collapsed[parentDepth] then
+					hidden = true
+					break
+				end
+			end
+			if not hidden and keep[index] then
+				table.insert(result, entry)
+			end
+			for parentDepth = depth, #collapsed do
+				collapsed[parentDepth] = nil
+			end
+			if entry.hasChildren then
+				collapsed[depth] = not isExpanded(entry)
+			end
+		end
+		return result
 	end
 
 	function render(entries)
@@ -328,13 +416,32 @@ function InspectorPage.create(context, parent)
 			Components.corner(row, Theme.Radius.sm)
 
 			local indent = math.min((entry.depth or 0) * 14, 98)
+			local caret = Components.create("TextButton", {
+				Name = "Caret",
+				Text = entry.hasChildren and (isExpanded(entry) and "⌄" or "›") or "·",
+				TextColor3 = palette.textFaint,
+				TextSize = Theme.Text.micro,
+				FontFace = Theme.Font.mono,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				AutoButtonColor = false,
+				Size = UDim2.fromOffset(28, 30),
+				Position = UDim2.fromOffset(8 + indent, 0),
+				parent = row,
+			})
+			caret.MouseButton1Click:Connect(function()
+				if entry.hasChildren then
+					expanded[entry.path] = not isExpanded(entry)
+					render(visibleEntries())
+				end
+			end)
+
 			Components.label(row, {
-				text = entry.hasChildren and "›" or "·",
+				text = "",
 				font = Theme.Font.mono,
 				textSize = Theme.Text.micro,
 				color = palette.textFaint,
-				size = UDim2.fromOffset(28, 30),
-				position = UDim2.fromOffset(8 + indent, 0),
+				size = UDim2.fromOffset(0, 0),
 			})
 
 			Components.label(row, {
@@ -366,22 +473,16 @@ function InspectorPage.create(context, parent)
 			end)
 		end
 
-		result.Text = ("%d / %d tree nodes"):format(#entries, #allEntries)
+		result.Text = ("%d / %d visible nodes"):format(#entries, #allEntries)
 	end
 
 	local function applyFilter()
-		local query = searchBox.Text:lower():gsub("^%s+", ""):gsub("%s+$", "")
-		local filtered = {}
-		for _, entry in ipairs(allEntries) do
-			if matches(entry, query) then
-				table.insert(filtered, entry)
-			end
-		end
-		render(filtered)
+		render(visibleEntries())
 	end
 
 	scanButton.MouseButton1Click:Connect(function()
 		allEntries = context.world and context.world:tree(600) or scanWorkspace()
+		expanded = {}
 		applyFilter()
 		context.logger:info("Inspector", ("scanned %d instances"):format(#allEntries))
 	end)
