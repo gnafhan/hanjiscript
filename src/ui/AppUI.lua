@@ -104,6 +104,13 @@ function AppUI:_buildScreen()
 		error("AppUI: unable to resolve a Gui parent (CoreGui/PlayerGui)", 2)
 	end
 
+	local existing = parent:FindFirstChild("HanjiScript")
+
+	while existing do
+		existing:Destroy()
+		existing = parent:FindFirstChild("HanjiScript")
+	end
+
 	self._screen = Components.create("ScreenGui", {
 		Name = "HanjiScript",
 		ResetOnSpawn = false,

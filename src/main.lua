@@ -9,6 +9,14 @@ return function(bootstrap)
 		options = bootstrap.options
 	end
 
+	if type(getgenv) == "function" then
+		local existing = getgenv().HanjiScript
+
+		if type(existing) == "table" and type(existing.destroy) == "function" then
+			pcall(existing.destroy)
+		end
+	end
+
 	local application = Application.new(options)
 	application:init()
 	application:start()
