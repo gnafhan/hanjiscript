@@ -65,7 +65,24 @@ function WorkflowRunner:refreshPlan()
 		self.target = plan.target
 	end
 	if plan.target and self.context.navigator then
-		plan.navigation = self.context.navigator:estimate(plan.target)
+		-- Planning stays read-only, but use the Navigator preview so the same
+		-- path estimate drives both the UI card and the optional world overlay.
+		local task = self.context.navigator:goTo(plan.target, { execute = false })
+		local result = task and task.result
+		if result then
+			plan.navigation = {
+				available = result.success == true,
+				success = result.success,
+				preview = result.preview == true,
+				distance = result.distance,
+				pathLength = result.pathLength,
+				pathStatus = result.pathStatus,
+				waypoints = result.waypoints and #result.waypoints or 0,
+				reason = result.reason,
+			}
+		else
+			plan.navigation = self.context.navigator:estimate(plan.target)
+		end
 	end
 	if plan.target and self.context.interactionController then
 		plan.interaction = self.context.interactionController:describe(plan.target)

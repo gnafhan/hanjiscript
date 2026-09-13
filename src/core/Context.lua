@@ -23,6 +23,7 @@ local function defaultFields()
 		features = nil,
 		ui = nil,
 		overlay = nil,
+		pathOverlay = nil,
 	}
 end
 

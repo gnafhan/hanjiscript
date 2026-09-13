@@ -21,6 +21,7 @@ local CapabilityDetector = require("runtime.CapabilityDetector")
 
 local AppUI = require("ui.AppUI")
 local EntityOverlay = require("ui.overlays.EntityOverlay")
+local PathOverlay = require("ui.overlays.PathOverlay")
 local WorldModel = require("world.WorldModel")
 local MovementSensor = require("sensors.MovementSensor")
 local InteractionSensor = require("sensors.InteractionSensor")
@@ -117,6 +118,28 @@ function Application:_registerCommands()
 		end
 	end)
 
+	commandBus:register("navigation.preview", function()
+		local runner = context.workflowRunner
+		local navigator = context.navigator
+		local snapshot = runner and runner:getSnapshot() or {}
+		local target = snapshot.plan and snapshot.plan.target
+		if not target then
+			logger:warn("Navigator", "no workflow target is available for preview")
+			return
+		end
+		local task = navigator and navigator:goTo(target, { execute = false })
+		local result = task and task.result
+		if result and result.success then
+			logger:info("Navigator", "route preview computed", {
+				distance = result.distance,
+				pathLength = result.pathLength,
+				waypoints = #result.waypoints,
+			})
+		else
+			logger:warn("Navigator", result and result.reason or "route preview unavailable")
+		end
+	end)
+
 	commandBus:register("replay.play", function()
 		context.replay:play()
 	end)
@@ -198,6 +221,7 @@ function Application:init()
 	context.workflowInference = WorkflowInference
 	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
 	context.overlay = EntityOverlay.new(context)
+	context.pathOverlay = PathOverlay.new(context)
 
 	local ui = AppUI.new(context)
 	context.ui = ui
@@ -229,6 +253,7 @@ function Application:start()
 		context.ui:mount()
 	end
 	if context.overlay then context.overlay:start() end
+	if context.pathOverlay then context.pathOverlay:start() end
 
 	context.metrics:set("startedAt", self._startedAt)
 	self.lifecycle:set(Lifecycle.States.Running)
@@ -251,6 +276,7 @@ function Application:stop()
 		context.ui:unmount()
 	end
 	if context.overlay then context.overlay:stop() end
+	if context.pathOverlay then context.pathOverlay:stop() end
 
 	if context.adapter and type(context.adapter.stop) == "function" then
 		context.adapter:stop()
@@ -293,6 +319,9 @@ function Application:destroy()
 		end
 		if context.overlay and type(context.overlay.destroy) == "function" then
 			context.overlay:destroy()
+		end
+		if context.pathOverlay and type(context.pathOverlay.destroy) == "function" then
+			context.pathOverlay:destroy()
 		end
 
 		if context.logger then

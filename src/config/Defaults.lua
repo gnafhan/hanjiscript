@@ -21,6 +21,8 @@ return {
 		overlayEnabled = true,
 		overlayMaxMarkers = 60,
 		overlayRadius = 140,
+		pathOverlayEnabled = true,
+		pathOverlayMaxWaypoints = 128,
 		backdropEnabled = true,
 		theme = "dark",
 		startVisible = true,

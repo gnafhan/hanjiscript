@@ -53,6 +53,7 @@
     "ui.Components": "src/ui/Components.lua",
 	"ui.Notifications": "src/ui/Notifications.lua",
 	"ui.overlays.EntityOverlay": "src/ui/overlays/EntityOverlay.lua",
+	"ui.overlays.PathOverlay": "src/ui/overlays/PathOverlay.lua",
 	"ui.AppUI": "src/ui/AppUI.lua",
     "ui.pages.DashboardPage": "src/ui/pages/DashboardPage.lua",
     "ui.pages.InspectorPage": "src/ui/pages/InspectorPage.lua",

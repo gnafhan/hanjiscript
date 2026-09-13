@@ -109,6 +109,7 @@ function WorkflowPage.create(context, parent)
 
 	commandButton("Start", "automation.start", "primary")
 	commandButton("Advance", "automation.advance", "secondary")
+	commandButton("Preview route", "navigation.preview", "secondary")
 	commandButton("Stop", "automation.stop", "danger")
 
 	local pipeline = Components.card(frame, {

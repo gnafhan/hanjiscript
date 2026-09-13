@@ -41,9 +41,8 @@ function SettingsPage.create(context, parent)
 		name = "Preferences",
 		padding = Theme.Spacing.md,
 		gap = Theme.Spacing.sm,
-		-- 16px heading + four 50px rows + gaps and card padding.
-		-- The previous 190px height clipped the final control into the next card.
-		size = UDim2.new(1, 0, 0, 272),
+		-- 16px heading + five 50px rows + gaps and card padding.
+		size = UDim2.new(1, 0, 0, 330),
 		layoutOrder = 0,
 	})
 
@@ -90,10 +89,26 @@ function SettingsPage.create(context, parent)
 		context.logger:info("Settings", ("entity overlay %s"):format(value and "enabled" or "disabled"))
 	end)
 
+	local pathRow = Components.row(preferences, {
+		title = "Navigation Path Overlay",
+		subtitle = "Draw the latest dry-run route in the world",
+		layoutOrder = 3,
+	})
+
+	local pathToggle = Components.toggle(pathRow.right, {
+		value = context.config:get("ui.pathOverlayEnabled", true),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchorPoint = Vector2.new(0.5, 0.5),
+	}, function(value)
+		context.config:set("ui.pathOverlayEnabled", value)
+		if context.pathOverlay then context.pathOverlay:setEnabled(value) end
+		context.logger:info("Settings", ("path overlay %s"):format(value and "enabled" or "disabled"))
+	end)
+
 	local logRow = Components.row(preferences, {
 		title = "Log Level",
 		subtitle = "Minimum severity sent to the logger",
-		layoutOrder = 3,
+		layoutOrder = 4,
 	})
 
 	local logButton = Components.button(logRow.right, {
@@ -119,7 +134,7 @@ function SettingsPage.create(context, parent)
 	local rateRow = Components.row(preferences, {
 		title = "Movement Sample Rate",
 		subtitle = "Samples captured per second",
-		layoutOrder = 4,
+		layoutOrder = 5,
 	})
 
 	local rateButton = Components.button(rateRow.right, {
@@ -199,6 +214,7 @@ function SettingsPage.create(context, parent)
 	local function refresh()
 		backdropToggle.set(context.config:get("ui.backdropEnabled", true))
 		overlayToggle.set(context.config:get("ui.overlayEnabled", true))
+		pathToggle.set(context.config:get("ui.pathOverlayEnabled", true))
 
 		local logLabel = buttonLabel(logButton)
 		if logLabel then
