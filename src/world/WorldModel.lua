@@ -1,6 +1,7 @@
 local require = ...
 local Maid = require("utils.Maid")
 local EventTypes = require("core.EventTypes")
+local EntityClassifier = require("world.EntityClassifier")
 
 local WorldModel = {}
 WorldModel.__index = WorldModel
@@ -15,7 +16,7 @@ local function entity(instance)
 	elseif instance:IsA("Sound") then assets.sound=instance.SoundId
 	elseif instance:IsA("Animation") then assets.animation=instance.AnimationId end
 	return { id = instance:GetDebugId(), instance = instance, name = instance.Name, className = instance.ClassName,
-		path = instance:GetFullName(), position = position, attributes = instance:GetAttributes(), assets = assets }
+		path = instance:GetFullName(), position = position, attributes = instance:GetAttributes(), assets = assets, tags = EntityClassifier.classify(instance, assets) }
 end
 
 function WorldModel.new(context)
@@ -36,6 +37,17 @@ function WorldModel:list(query)
 		if query=="" or value.name:lower():find(query,1,true) or value.className:lower():find(query,1,true) then table.insert(result,value) end
 	end
 	table.sort(result,function(a,b) return a.path<b.path end); return result
+end
+function WorldModel:tree(limit)
+	local result, count = {}, 0
+	local function visit(instance, depth)
+		if count >= (limit or 500) then return end
+		local value=self.entities[instance] or entity(instance); value.depth=depth; value.hasChildren=#instance:GetChildren()>0
+		table.insert(result,value); count+=1
+		for _,child in ipairs(instance:GetChildren()) do visit(child,depth+1); if count >= (limit or 500) then break end end
+	end
+	for _,root in ipairs(game:GetService("Workspace"):GetChildren()) do visit(root,0); if count >= (limit or 500) then break end end
+	return result
 end
 function WorldModel:start()
 	local workspaceService=game:GetService("Workspace")

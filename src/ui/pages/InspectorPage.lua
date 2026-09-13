@@ -96,7 +96,7 @@ function InspectorPage.create(context, parent)
 	})
 
 	local scanButton = Components.button(buttonRow, {
-		text = "Scan Workspace",
+		text = "Build Tree",
 		variant = "primary",
 		icon = "inspector",
 		size = UDim2.fromOffset(150, 34),
@@ -205,6 +205,7 @@ function InspectorPage.create(context, parent)
 	detail.path = detailRow("Path", 3)
 	detail.children = detailRow("Children", 4)
 	detail.assets = detailRow("Assets", 5)
+	detail.tags = detailRow("Tags", 6)
 
 	local placeholder = Components.label(detailCard, {
 		text = "Select an instance from the list to inspect it.",
@@ -244,6 +245,7 @@ function InspectorPage.create(context, parent)
 		local values = {}
 		for _, asset in pairs(assets) do if asset and asset ~= "" then table.insert(values, tostring(asset)) end end
 		detail.assets.Text = #values > 0 and table.concat(values, ", ") or "—"
+		detail.tags.Text = entry.tags and table.concat(entry.tags, ", ") or "—"
 	end
 
 	local function render(entries)
@@ -272,13 +274,14 @@ function InspectorPage.create(context, parent)
 
 			Components.corner(row, Theme.Radius.sm)
 
+			local indent = math.min((entry.depth or 0) * 14, 98)
 			Components.label(row, {
-				text = tostring(index),
+				text = entry.hasChildren and "›" or "·",
 				font = Theme.Font.mono,
 				textSize = Theme.Text.micro,
 				color = palette.textFaint,
 				size = UDim2.fromOffset(28, 30),
-				position = UDim2.fromOffset(8, 0),
+				position = UDim2.fromOffset(8 + indent, 0),
 			})
 
 			Components.label(row, {
@@ -287,8 +290,8 @@ function InspectorPage.create(context, parent)
 				textSize = Theme.Text.caption,
 				color = palette.text,
 				truncate = Enum.TextTruncate.AtEnd,
-				position = UDim2.fromOffset(36, 0),
-				size = UDim2.new(1, -180, 1, 0),
+				position = UDim2.fromOffset(28 + indent, 0),
+				size = UDim2.new(1, -(172 + indent), 1, 0),
 			})
 
 			classBadge(row, entry.className or instance.ClassName, palette.accent, UDim2.new(1, -70, 0.5, -9))
@@ -310,11 +313,11 @@ function InspectorPage.create(context, parent)
 			end)
 		end
 
-		result.Text = ("%d root children"):format(#entries)
+		result.Text = ("%d tree nodes"):format(#entries)
 	end
 
 	scanButton.MouseButton1Click:Connect(function()
-		local entries = context.world and context.world:list() or scanWorkspace()
+		local entries = context.world and context.world:tree(600) or scanWorkspace()
 		render(entries)
 		context.logger:info("Inspector", ("scanned %d instances"):format(#entries))
 	end)

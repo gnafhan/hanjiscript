@@ -19,6 +19,7 @@
     "adapters.Adapter": "src/adapters/Adapter.lua",
     "adapters.UniversalAdapter": "src/adapters/UniversalAdapter.lua",
 	"world.WorldModel": "src/world/WorldModel.lua",
+	"world.EntityClassifier": "src/world/EntityClassifier.lua",
 	"sensors.MovementSensor": "src/sensors/MovementSensor.lua",
 	"sensors.InteractionSensor": "src/sensors/InteractionSensor.lua",
 	"recorder.SessionRecorder": "src/recorder/SessionRecorder.lua",
