@@ -176,17 +176,46 @@ function AppUI:_buildScreen()
 end
 
 function AppUI:_buildWindow()
+	local shell = Components.create("Frame", {
+		Name = "WindowShell",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = self._expandedSize,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 10,
+		parent = self._screen,
+	})
+
+	-- A sliced Roblox shadow gives the window a real edge over the backdrop.
+	-- It lives outside the clipped window so its soft edge is never cropped.
+	local shadow = Components.create("ImageLabel", {
+		Name = "Shadow",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 42, 1, 42),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Image = "rbxassetid://6015897843",
+		ImageColor3 = Color3.fromRGB(0, 0, 0),
+		ImageTransparency = 0.38,
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(49, 49, 450, 450),
+		ZIndex = 9,
+		parent = shell,
+	})
+
 	local window = Components.create("Frame", {
 		Name = "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = self._expandedSize,
+		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = palette.background,
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 		ZIndex = 10,
-		parent = self._screen,
+		parent = shell,
 	})
 
 	Components.corner(window, Theme.Radius.xl)
@@ -197,6 +226,7 @@ function AppUI:_buildWindow()
 	}), 90)
 
 	self._window = window
+	self._windowShell = shell
 end
 
 function AppUI:_buildTopbar()
@@ -273,7 +303,7 @@ function AppUI:_buildTopbar()
 
 	Components.divider(bar, 0).Position = UDim2.new(0, 0, 1, -1)
 
-	self:_makeDraggable(bar, self._window)
+	self:_makeDraggable(bar, self._windowShell)
 
 	return bar
 end
@@ -441,7 +471,7 @@ function AppUI:_buildResizeHandle()
 		rotation = 0,
 	})
 
-	self:_makeResizable(handle, self._window)
+	self:_makeResizable(handle, self._windowShell)
 end
 
 function AppUI:_mountPages()
@@ -595,11 +625,11 @@ function AppUI:_applyMinimized(minimized)
 	end
 
 	if minimized then
-		Motion.tween(self._window, Theme.Motion.easeInOut, {
+		Motion.tween(self._windowShell, Theme.Motion.easeInOut, {
 			Size = UDim2.fromOffset(self._expandedSize.X.Offset, Layout.topbarHeight + Layout.statusbarHeight),
 		})
 	else
-		Motion.tween(self._window, Theme.Motion.easeInOut, { Size = self._expandedSize })
+		Motion.tween(self._windowShell, Theme.Motion.easeInOut, { Size = self._expandedSize })
 	end
 end
 
@@ -664,12 +694,19 @@ function AppUI:_makeDraggable(handle, target)
 
 	local function update(input)
 		local delta = input.Position - dragStart
-		target.Position = UDim2.new(
-			startPosition.X.Scale,
-			startPosition.X.Offset + delta.X,
-			startPosition.Y.Scale,
-			startPosition.Y.Offset + delta.Y
-		)
+		local camera = workspace.CurrentCamera
+		local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+		local width = target.AbsoluteSize.X
+		local height = target.AbsoluteSize.Y
+		local margin = 14
+		local centerX = startPosition.X.Scale * viewport.X + startPosition.X.Offset + delta.X
+		local centerY = startPosition.Y.Scale * viewport.Y + startPosition.Y.Offset + delta.Y
+		local minX, maxX = width / 2 + margin, viewport.X - width / 2 - margin
+		local minY, maxY = height / 2 + margin, viewport.Y - height / 2 - margin
+
+		if minX > maxX then centerX = viewport.X / 2 else centerX = clamp(centerX, minX, maxX) end
+		if minY > maxY then centerY = viewport.Y / 2 else centerY = clamp(centerY, minY, maxY) end
+		target.Position = UDim2.fromOffset(centerX, centerY)
 	end
 
 	self._maid:Add(handle.InputBegan:Connect(function(input)
