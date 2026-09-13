@@ -227,6 +227,7 @@ function RecorderPage.create(context, parent)
 		"interaction.completed",
 		"world.entity_added",
 		"world.entity_removed",
+		"semantic.action",
 	}
 	for _, eventType in ipairs(recordedTypes) do
 		maid:Add(context.eventBus:on(eventType, function(data)

@@ -23,6 +23,7 @@ local WorldModel = require("world.WorldModel")
 local MovementSensor = require("sensors.MovementSensor")
 local InteractionSensor = require("sensors.InteractionSensor")
 local SessionRecorder = require("recorder.SessionRecorder")
+local EventCorrelator = require("recorder.EventCorrelator")
 
 local Application = {}
 Application.__index = Application
@@ -146,6 +147,8 @@ function Application:init()
 	context.interactionSensor = InteractionSensor.new(context)
 	context.interactionSensor:start()
 	context.recorder = SessionRecorder.new(context)
+	context.eventCorrelator = EventCorrelator.new(context)
+	context.eventCorrelator:start()
 
 	local ui = AppUI.new(context)
 	context.ui = ui
@@ -204,6 +207,7 @@ function Application:stop()
 	if context.movementSensor then context.movementSensor:stop() end
 	if context.interactionSensor then context.interactionSensor:stop() end
 	if context.recorder then context.recorder:stop() end
+	if context.eventCorrelator then context.eventCorrelator:stop() end
 	if context.world then context.world:destroy() end
 
 	self.lifecycle:set(Lifecycle.States.Completed)

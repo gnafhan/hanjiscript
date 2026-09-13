@@ -23,6 +23,7 @@
 	"sensors.MovementSensor": "src/sensors/MovementSensor.lua",
 	"sensors.InteractionSensor": "src/sensors/InteractionSensor.lua",
 	"recorder.SessionRecorder": "src/recorder/SessionRecorder.lua",
+	"recorder.EventCorrelator": "src/recorder/EventCorrelator.lua",
     "features.FeatureManager": "src/features/FeatureManager.lua",
     "config.Defaults": "src/config/Defaults.lua",
     "config.Config": "src/config/Config.lua",
