@@ -113,11 +113,15 @@ function PathOverlay:render(pathResult)
 		local color = index == #points and Theme.Dark.success or Theme.Dark.accent
 		local part = pointPart("Waypoint_" .. tostring(index), position, color, self.folder)
 		table.insert(pointParts, part)
-		self.pathMaid:Add(part)
+		self.pathMaid:Add(function()
+			if part.Parent then part:Destroy() end
+		end)
 	end
 	for index = 2, #pointParts do
 		local beam = segmentBeam(index - 1, pointParts[index - 1], pointParts[index], self.folder, Theme.Dark.accent)
-		self.pathMaid:Add(beam)
+		self.pathMaid:Add(function()
+			if beam.Parent then beam:Destroy() end
+		end)
 	end
 
 	self.lastPath = pathResult
