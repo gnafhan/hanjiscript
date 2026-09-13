@@ -20,6 +20,7 @@ local ExperienceDetector = require("runtime.ExperienceDetector")
 local CapabilityDetector = require("runtime.CapabilityDetector")
 
 local AppUI = require("ui.AppUI")
+local EntityOverlay = require("ui.overlays.EntityOverlay")
 local WorldModel = require("world.WorldModel")
 local MovementSensor = require("sensors.MovementSensor")
 local InteractionSensor = require("sensors.InteractionSensor")
@@ -192,6 +193,7 @@ function Application:init()
 	context.interactionController = InteractionController.new(context)
 	context.replay = ReplaySession.new(context)
 	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
+	context.overlay = EntityOverlay.new(context)
 
 	local ui = AppUI.new(context)
 	context.ui = ui
@@ -222,6 +224,7 @@ function Application:start()
 	if context.ui and type(context.ui.mount) == "function" then
 		context.ui:mount()
 	end
+	if context.overlay then context.overlay:start() end
 
 	context.metrics:set("startedAt", self._startedAt)
 	self.lifecycle:set(Lifecycle.States.Running)
@@ -243,6 +246,7 @@ function Application:stop()
 	if context.ui and type(context.ui.unmount) == "function" then
 		context.ui:unmount()
 	end
+	if context.overlay then context.overlay:stop() end
 
 	if context.adapter and type(context.adapter.stop) == "function" then
 		context.adapter:stop()
@@ -282,6 +286,9 @@ function Application:destroy()
 	if context then
 		if context.workflowRunner and type(context.workflowRunner.destroy) == "function" then
 			context.workflowRunner:destroy()
+		end
+		if context.overlay and type(context.overlay.destroy) == "function" then
+			context.overlay:destroy()
 		end
 
 		if context.logger then

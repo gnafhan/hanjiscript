@@ -21,6 +21,7 @@ local function defaultFields()
 		adapters = nil,
 		features = nil,
 		ui = nil,
+		overlay = nil,
 	}
 end
 

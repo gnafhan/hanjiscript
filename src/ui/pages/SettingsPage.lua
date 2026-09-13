@@ -41,9 +41,9 @@ function SettingsPage.create(context, parent)
 		name = "Preferences",
 		padding = Theme.Spacing.md,
 		gap = Theme.Spacing.sm,
-		-- 16px heading + three 50px rows + gaps and card padding.
+		-- 16px heading + four 50px rows + gaps and card padding.
 		-- The previous 190px height clipped the final control into the next card.
-		size = UDim2.new(1, 0, 0, 214),
+		size = UDim2.new(1, 0, 0, 272),
 		layoutOrder = 0,
 	})
 
@@ -74,10 +74,26 @@ function SettingsPage.create(context, parent)
 		context.logger:info("Settings", ("interface backdrop %s"):format(value and "enabled" or "disabled"))
 	end)
 
+	local overlayRow = Components.row(preferences, {
+		title = "Entity Recon Overlay",
+		subtitle = "Show classified assets around the player",
+		layoutOrder = 2,
+	})
+
+	local overlayToggle = Components.toggle(overlayRow.right, {
+		value = context.config:get("ui.overlayEnabled", true),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchorPoint = Vector2.new(0.5, 0.5),
+	}, function(value)
+		context.config:set("ui.overlayEnabled", value)
+		if context.overlay then context.overlay:setEnabled(value) end
+		context.logger:info("Settings", ("entity overlay %s"):format(value and "enabled" or "disabled"))
+	end)
+
 	local logRow = Components.row(preferences, {
 		title = "Log Level",
 		subtitle = "Minimum severity sent to the logger",
-		layoutOrder = 2,
+		layoutOrder = 3,
 	})
 
 	local logButton = Components.button(logRow.right, {
@@ -103,7 +119,7 @@ function SettingsPage.create(context, parent)
 	local rateRow = Components.row(preferences, {
 		title = "Movement Sample Rate",
 		subtitle = "Samples captured per second",
-		layoutOrder = 3,
+		layoutOrder = 4,
 	})
 
 	local rateButton = Components.button(rateRow.right, {
@@ -182,6 +198,7 @@ function SettingsPage.create(context, parent)
 
 	local function refresh()
 		backdropToggle.set(context.config:get("ui.backdropEnabled", true))
+		overlayToggle.set(context.config:get("ui.overlayEnabled", true))
 
 		local logLabel = buttonLabel(logButton)
 		if logLabel then

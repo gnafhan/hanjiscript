@@ -18,7 +18,9 @@ return {
 
 	ui = {
 		enabled = true,
-		overlayEnabled = false,
+		overlayEnabled = true,
+		overlayMaxMarkers = 60,
+		overlayRadius = 140,
 		backdropEnabled = true,
 		theme = "dark",
 		startVisible = true,
