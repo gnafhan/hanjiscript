@@ -144,10 +144,16 @@ function EntityOverlay:refresh()
 	end
 	self:_clearMarkers()
 	local nearby = self.context.world and self.context.world:withinRadius(position, self.radius) or {}
+	local player = game:GetService("Players").LocalPlayer
+	local character = player and player.Character
 	local count = 0
 	for _, item in ipairs(nearby) do
 		if count >= self.maxMarkers then break end
-		if isInteresting(item.entity) and self:_createMarker(item.entity, item.distance) then count += 1 end
+		local instance = item.entity and item.entity.instance
+		local isOwnCharacter = instance and character and instance:IsDescendantOf(character)
+		if not isOwnCharacter and isInteresting(item.entity) and self:_createMarker(item.entity, item.distance) then
+			count += 1
+		end
 	end
 	self.lastPosition = position
 	self.dirty = false
