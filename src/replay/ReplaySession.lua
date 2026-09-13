@@ -52,6 +52,7 @@ function ReplaySession:_resetState()
 		workflowState = nil,
 		lastSemantic = nil,
 		checkpointTime = nil,
+		inference = nil,
 	}
 	self.cursor = 1
 end
@@ -62,6 +63,7 @@ function ReplaySession:load(session)
 	end
 
 	self.session = session
+	self.inference = session.inference
 	self.events = {}
 	for _, event in ipairs(session.events) do
 		table.insert(self.events, event)
@@ -205,6 +207,7 @@ function ReplaySession:getSnapshot()
 		eventCount = #self.events,
 		snapshotCount = #self.snapshots,
 		checkpointTime = self.state.checkpointTime,
+		inference = copy(self.inference),
 		playing = self.clock.playing,
 		state = {
 			position = copy(self.state.position),

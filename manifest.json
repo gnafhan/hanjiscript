@@ -28,6 +28,7 @@
 	"recorder.SessionRecorder": "src/recorder/SessionRecorder.lua",
     "recorder.EventCorrelator": "src/recorder/EventCorrelator.lua",
 	"recorder.EventSchema": "src/recorder/EventSchema.lua",
+	"recorder.WorkflowInference": "src/recorder/WorkflowInference.lua",
 	"recorder.SnapshotManager": "src/recorder/SnapshotManager.lua",
 	"automation.Workflow": "src/automation/Workflow.lua",
 	"automation.StateMachine": "src/automation/StateMachine.lua",

@@ -59,6 +59,15 @@ function ReplayPage.create(context, parent)
 		size = UDim2.new(1, -250, 0, 18),
 		truncate = Enum.TextTruncate.AtEnd,
 	})
+	local inferenceLabel = Components.label(hero, {
+		text = "Inference  —",
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.info,
+		position = UDim2.fromOffset(0, 50),
+		size = UDim2.new(1, -250, 0, 16),
+		truncate = Enum.TextTruncate.AtEnd,
+	})
 
 	local controls = Components.create("Frame", {
 		Name = "Controls",
@@ -190,6 +199,15 @@ function ReplayPage.create(context, parent)
 		else
 			title.Text = "No session loaded"
 			subtitle.Text = "Stop a recording to prepare it for replay."
+		end
+		local inference = snapshot.inference
+		if inference and inference.id then
+			inferenceLabel.Text = ("Inference  %s · %d%% confidence"):format(
+				inference.id,
+				math.floor((inference.confidence or 0) * 100 + 0.5)
+			)
+		else
+			inferenceLabel.Text = "Inference  —"
 		end
 		local state = snapshot.state or {}
 		stateLabels.Workflow.Text = state.workflowState or "—"
