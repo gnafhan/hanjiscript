@@ -132,15 +132,15 @@ function AppUI:_buildWindow()
 	Components.corner(shadow, Theme.Radius.xl)
 	self._shadow = shadow
 
-	local window = Components.create("CanvasGroup", {
+	local window = Components.create("Frame", {
 		Name = "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = self._expandedSize,
 		BackgroundColor3 = palette.background,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
-		GroupTransparency = 0,
 		ZIndex = 2,
 		parent = self._screen,
 	})
@@ -398,11 +398,10 @@ end
 
 function AppUI:_mountPages()
 	for _, pageModule in ipairs(PAGE_MODULES) do
-		local host = Components.create("CanvasGroup", {
+		local host = Components.create("Frame", {
 			Name = "Host_" .. pageModule.id,
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
-			GroupTransparency = 0,
 			Visible = false,
 			parent = self._pageHost,
 		})
@@ -539,10 +538,6 @@ function AppUI:_applyVisibility(visible)
 	end
 
 	self._screen.Enabled = visible == true
-
-	if visible then
-		self._window.GroupTransparency = 0
-	end
 end
 
 function AppUI:_applyMinimized(minimized)
@@ -553,10 +548,9 @@ function AppUI:_applyMinimized(minimized)
 	if minimized then
 		Motion.tween(self._window, Theme.Motion.easeInOut, {
 			Size = UDim2.fromOffset(self._expandedSize.X.Offset, Layout.topbarHeight + Layout.statusbarHeight),
-			GroupTransparency = 0,
 		})
 	else
-		Motion.tween(self._window, Theme.Motion.easeInOut, { Size = self._expandedSize, GroupTransparency = 0 })
+		Motion.tween(self._window, Theme.Motion.easeInOut, { Size = self._expandedSize })
 	end
 end
 
@@ -575,11 +569,9 @@ function AppUI:_applyPage(activeId)
 
 	self._activePage = activeId
 	host.Visible = true
-	host.GroupTransparency = 0
 	host.Position = UDim2.fromOffset(0, 12)
 
-	Motion.tween(host, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-		GroupTransparency = 0,
+	Motion.tween(host, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
 		Position = UDim2.fromOffset(0, 0),
 	})
 
@@ -712,11 +704,7 @@ function AppUI:mount()
 	self:_bindState()
 
 	self._closeButton.MouseButton1Click:Connect(function()
-		Motion.tween(self._window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { GroupTransparency = 1 })
-
-		task.delay(0.2, function()
-			self.state:set("visible", false)
-		end)
+		self.state:set("visible", false)
 	end)
 
 	self._minimizeButton.MouseButton1Click:Connect(function()
@@ -728,7 +716,6 @@ function AppUI:mount()
 
 	if self.state:get("visible", true) then
 		self._screen.Enabled = true
-		self._window.GroupTransparency = 0
 	else
 		self._screen.Enabled = false
 	end
