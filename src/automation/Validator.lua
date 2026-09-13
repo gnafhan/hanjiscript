@@ -46,4 +46,27 @@ function Validator:check(machine, signal, data, plan)
 	return true
 end
 
+function Validator:validateEvidence(action, evidence)
+	evidence = evidence or {}
+	if action == "pickup" then
+		if evidence.entityRemoved ~= true then
+			return false, "pickup has no confirmed world entity removal"
+		end
+		if type(evidence.inventoryDelta) ~= "number" or evidence.inventoryDelta <= 0 then
+			return false, "pickup has no positive inventory delta"
+		end
+	elseif action == "sell" then
+		if type(evidence.inventoryDelta) ~= "number" or evidence.inventoryDelta >= 0 then
+			return false, "sale has no negative inventory delta"
+		end
+		if type(evidence.currencyDelta) ~= "number" or evidence.currencyDelta <= 0 then
+			return false, "sale has no positive currency delta"
+		end
+	else
+		return false, "unknown evidence action"
+	end
+
+	return true, evidence
+end
+
 return Validator

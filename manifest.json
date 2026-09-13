@@ -33,6 +33,8 @@
 	"automation.TargetSelector": "src/automation/TargetSelector.lua",
 	"automation.Planner": "src/automation/Planner.lua",
 	"automation.Validator": "src/automation/Validator.lua",
+	"automation.Navigator": "src/automation/Navigator.lua",
+	"automation.InteractionController": "src/automation/InteractionController.lua",
 	"automation.WorkflowRunner": "src/automation/WorkflowRunner.lua",
     "features.FeatureManager": "src/features/FeatureManager.lua",
     "config.Defaults": "src/config/Defaults.lua",

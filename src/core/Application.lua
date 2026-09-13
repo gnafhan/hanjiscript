@@ -28,6 +28,8 @@ local SessionRecorder = require("recorder.SessionRecorder")
 local EventCorrelator = require("recorder.EventCorrelator")
 local Workflow = require("automation.Workflow")
 local WorkflowRunner = require("automation.WorkflowRunner")
+local Navigator = require("automation.Navigator")
+local InteractionController = require("automation.InteractionController")
 
 local Application = {}
 Application.__index = Application
@@ -166,6 +168,8 @@ function Application:init()
 	context.eventCorrelator:start()
 	context.analytics = Analytics.new(context)
 	context.analytics:start()
+	context.navigator = Navigator.new(context)
+	context.interactionController = InteractionController.new(context)
 	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
 
 	local ui = AppUI.new(context)
@@ -229,6 +233,7 @@ function Application:stop()
 	if context.eventCorrelator then context.eventCorrelator:stop() end
 	if context.analytics then context.analytics:stop() end
 	if context.workflowRunner then context.workflowRunner:stop() end
+	if context.navigator then context.navigator:destroy() end
 	if context.world then context.world:destroy() end
 
 	self.lifecycle:set(Lifecycle.States.Completed)

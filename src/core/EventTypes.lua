@@ -15,6 +15,7 @@ return {
 	InventoryChanged = "inventory.changed",
 
 	NavigationStarted = "navigation.started",
+	NavigationPathComputed = "navigation.path_computed",
 	NavigationCompleted = "navigation.completed",
 
 	RecorderStateChanged = "recorder.state_changed",

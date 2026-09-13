@@ -15,6 +15,8 @@ local function defaultFields()
 		world = {},
 		analytics = nil,
 		workflowRunner = nil,
+		navigator = nil,
+		interactionController = nil,
 		adapters = nil,
 		features = nil,
 		ui = nil,

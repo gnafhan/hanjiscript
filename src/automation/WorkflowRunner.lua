@@ -60,6 +60,12 @@ function WorkflowRunner:refreshPlan()
 	if plan.target then
 		self.target = plan.target
 	end
+	if plan.target and self.context.navigator then
+		plan.navigation = self.context.navigator:estimate(plan.target)
+	end
+	if plan.target and self.context.interactionController then
+		plan.interaction = self.context.interactionController:describe(plan.target)
+	end
 
 	self.plan = plan
 	self.context.eventBus:emit(EventTypes.WorkflowPlanUpdated, copyPlan(plan))

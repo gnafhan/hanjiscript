@@ -171,7 +171,7 @@ function WorkflowPage.create(context, parent)
 	local planCard = Components.card(frame, {
 		name = "Plan",
 		padding = Theme.Spacing.lg,
-		size = UDim2.new(1, 0, 0, 188),
+		size = UDim2.new(1, 0, 0, 214),
 		layoutOrder = 2,
 	})
 
@@ -212,12 +212,22 @@ function WorkflowPage.create(context, parent)
 		wrapped = true,
 	})
 
+	local previewLabel = Components.label(planCard, {
+		text = "Preview  —",
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.info,
+		position = UDim2.fromOffset(0, 132),
+		size = UDim2.new(1, 0, 0, 18),
+		truncate = Enum.TextTruncate.AtEnd,
+	})
+
 	local evidenceLabel = Components.label(planCard, {
 		text = "Evidence  —",
 		font = Theme.Font.mono,
 		textSize = Theme.Text.micro,
 		color = palette.textFaint,
-		position = UDim2.fromOffset(0, 132),
+		position = UDim2.fromOffset(0, 160),
 		size = UDim2.new(1, 0, 0, 18),
 		truncate = Enum.TextTruncate.AtEnd,
 	})
@@ -240,6 +250,13 @@ function WorkflowPage.create(context, parent)
 		actionLabel.Text = plan.action or "Waiting"
 		targetLabel.Text = "Target  " .. (target and (target.name or target.path) or "—")
 		reasonLabel.Text = plan.reason or "Start the workflow to generate a plan from the live WorldModel."
+		local navigation = plan.navigation
+		local interaction = plan.interaction
+		local distance = navigation and navigation.distance
+		local actionCount = interaction and interaction.actions and #interaction.actions or 0
+		previewLabel.Text = distance
+			and ("Preview  %.1f studs · %d interaction(s)"):format(distance, actionCount)
+			or "Preview  unavailable until a target is selected"
 		local observation = snapshot.lastObservation
 		evidenceLabel.Text = "Evidence  " .. (observation and text(observation.type, "observed") or "—")
 
