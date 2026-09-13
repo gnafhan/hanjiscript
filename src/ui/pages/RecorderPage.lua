@@ -2,6 +2,8 @@ local require = ...
 
 local Theme = require("ui.Theme")
 local Components = require("ui.Components")
+local Icons = require("ui.Icons")
+local Motion = require("ui.Motion")
 local Maid = require("utils.Maid")
 
 local palette = Theme.Dark
@@ -9,6 +11,8 @@ local palette = Theme.Dark
 local RecorderPage = {
 	id = "recorder",
 	title = "Recorder",
+	subtitle = "Capture sessions into a semantic timeline",
+	icon = "recorder",
 	order = 3,
 }
 
@@ -22,6 +26,16 @@ local STATUS_COLORS = {
 	failed = palette.danger,
 }
 
+local STATUS_LABEL = {
+	idle = "Idle",
+	starting = "Starting",
+	running = "Recording",
+	paused = "Paused",
+	stopping = "Stopping",
+	stopped = "Stopped",
+	failed = "Failed",
+}
+
 function RecorderPage.create(context, parent)
 	local frame = Components.create("Frame", {
 		Name = "RecorderPage",
@@ -30,46 +44,76 @@ function RecorderPage.create(context, parent)
 		parent = parent,
 	})
 
-	Components.padding(frame, Theme.Spacing.md)
-	Components.list(frame, { gap = Theme.Spacing.sm })
+	Components.list(frame, { gap = Theme.Spacing.md })
 
-	local header = Components.create("Frame", {
-		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 28),
+	local hero = Components.card(frame, {
+		name = "Hero",
+		padding = Theme.Spacing.lg,
+		size = UDim2.new(1, 0, 0, 116),
+		layoutOrder = 0,
+	})
+
+	local indicator = Components.create("Frame", {
+		Name = "Indicator",
+		BackgroundColor3 = palette.textMuted,
+		BackgroundTransparency = 0.82,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		Size = UDim2.fromOffset(52, 52),
+		parent = hero,
+	})
+
+	Components.corner(indicator, 0.5)
+
+	local ring = Components.stroke(indicator, palette.textMuted, 1.5, 0.3)
+
+	local icon = Icons.create(indicator, "recorder", {
+		size = 24,
+		color = palette.textMuted,
+		anchorPoint = Vector2.new(0.5, 0.5),
+		position = UDim2.fromScale(0.5, 0.5),
+	})
+
+	local title = Components.label(hero, {
+		text = "Idle",
+		font = Theme.Font.display,
+		textSize = Theme.Text.title,
+		color = palette.text,
+		position = UDim2.fromOffset(74, 20),
+		size = UDim2.new(1, -360, 0, 24),
+	})
+
+	local subtitle = Components.label(hero, {
+		text = "No active session",
+		font = Theme.Font.body,
+		textSize = Theme.Text.caption,
+		color = palette.textMuted,
+		position = UDim2.fromOffset(74, 46),
+		size = UDim2.new(1, -360, 0, 16),
+	})
+
+	local controls = Components.create("Frame", {
+		Name = "Controls",
 		BackgroundTransparency = 1,
-		LayoutOrder = 0,
-		parent = frame,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.fromOffset(340, 36),
+		parent = hero,
 	})
 
-	Components.label(header, {
-		Text = "Session Recorder",
-		Font = Theme.Font.bold,
-		TextSize = Theme.TextSize.lg,
-		Size = UDim2.new(1, -80, 1, 0),
-		parent = header,
+	Components.list(controls, {
+		direction = Enum.FillDirection.Horizontal,
+		horizontal = Enum.HorizontalAlignment.Right,
+		vertical = Enum.VerticalAlignment.Center,
+		gap = Theme.Spacing.sm,
 	})
 
-	local status = Components.badge(header, {
-		Text = "idle",
-		Position = UDim2.new(1, -76, 0, 4),
-		size = UDim2.fromOffset(76, 20),
-		parent = header,
-	})
-
-	local toolbar = Components.create("Frame", {
-		Name = "Toolbar",
-		Size = UDim2.new(1, 0, 0, 30),
-		BackgroundTransparency = 1,
-		LayoutOrder = 1,
-		parent = frame,
-	})
-
-	Components.list(toolbar, { direction = Enum.FillDirection.Horizontal, gap = Theme.Spacing.sm })
-
-	local function action(text, command, order)
-		Components.button(toolbar, {
-			Text = text,
-			Size = UDim2.fromOffset(84, 30),
+	local function action(text, command, variant, order)
+		Components.button(controls, {
+			text = text,
+			variant = variant,
+			size = UDim2.fromOffset(80, 36),
 			layoutOrder = order,
 		}, function()
 			local ok, err = context.commandBus:execute(command)
@@ -80,25 +124,41 @@ function RecorderPage.create(context, parent)
 		end)
 	end
 
-	action("Start", "recorder.start", 1)
-	action("Pause", "recorder.pause", 2)
-	action("Resume", "recorder.resume", 3)
-	action("Stop", "recorder.stop", 4)
+	action("Start", "recorder.start", "primary", 1)
+	action("Pause", "recorder.pause", "secondary", 2)
+	action("Resume", "recorder.resume", "secondary", 3)
+	action("Stop", "recorder.stop", "danger", 4)
 
-	local scroll = Components.create("ScrollingFrame", {
-		Name = "Timeline",
-		Size = UDim2.new(1, 0, 1, -70),
-		BackgroundColor3 = palette.surface,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		LayoutOrder = 2,
-		parent = frame,
+	local timelineCard = Components.card(frame, {
+		name = "Timeline",
+		padding = Theme.Spacing.md,
+		gap = Theme.Spacing.sm,
+		size = UDim2.new(1, 0, 1, -128),
+		layoutOrder = 1,
 	})
 
-	Components.corner(scroll, Theme.Radius.sm)
-	Components.padding(scroll, Theme.Spacing.sm)
+	Components.label(timelineCard, {
+		text = "Timeline",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.label,
+		color = palette.textSecondary,
+		size = UDim2.new(1, 0, 0, 16),
+		layoutOrder = 0,
+	})
+
+	local scroll = Components.create("ScrollingFrame", {
+		Name = "Events",
+		Size = UDim2.new(1, 0, 1, -24),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = palette.borderStrong,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 1,
+		parent = timelineCard,
+	})
+
 	Components.list(scroll, { gap = 2 })
 
 	local maid = Maid.new()
@@ -107,42 +167,93 @@ function RecorderPage.create(context, parent)
 	local function append(entry)
 		counter += 1
 
-		Components.label(scroll, {
-			Text = ("%8.3f  [%s] %s"):format(entry.timestamp or 0, entry.tag, entry.message),
-			Font = Theme.Font.mono,
-			TextSize = Theme.TextSize.xs,
-			color = entry.level and entry.level >= 30 and palette.warn or palette.textMuted,
-			Size = UDim2.new(1, 0, 0, 16),
-			layoutOrder = counter,
+		local levelColor = palette.textMuted
+		if entry.level >= 40 then
+			levelColor = palette.danger
+		elseif entry.level >= 30 then
+			levelColor = palette.warn
+		elseif entry.level >= 20 then
+			levelColor = palette.info
+		end
+
+		local row = Components.create("Frame", {
+			Name = "Event",
+			Size = UDim2.new(1, 0, 0, 22),
+			BackgroundColor3 = palette.surfaceAlt,
+			BackgroundTransparency = 0.55,
+			BorderSizePixel = 0,
+			LayoutOrder = -counter,
 			parent = scroll,
+		})
+
+		Components.corner(row, Theme.Radius.sm)
+
+		local bar = Components.create("Frame", {
+			Name = "Bar",
+			BackgroundColor3 = levelColor,
+			BorderSizePixel = 0,
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 0, 0.5, 0),
+			Size = UDim2.new(0, 3, 0.6, 0),
+			parent = row,
+		})
+
+		Components.corner(bar, Theme.Radius.pill)
+
+		Components.label(row, {
+			text = ("%7.2fs"):format(entry.timestamp or 0),
+			font = Theme.Font.mono,
+			textSize = Theme.Text.micro,
+			color = palette.textFaint,
+			position = UDim2.fromOffset(12, 0),
+			size = UDim2.fromOffset(66, 22),
+		})
+
+		Components.label(row, {
+			text = ("%s  %s"):format(string.upper(entry.tag), entry.message),
+			font = Theme.Font.mono,
+			textSize = Theme.Text.micro,
+			color = palette.textSecondary,
+			truncate = Enum.TextTruncate.AtEnd,
+			position = UDim2.fromOffset(82, 0),
+			size = UDim2.new(1, -90, 1, 0),
 		})
 	end
 
 	maid:Add(context.logger.Emitted:Connect(append))
 
-	local function refresh()
-		local value = context.uiState and context.uiState:get("recorderStatus", "idle") or "idle"
-		local text = status:FindFirstChild("Text")
+	local function setStatus(status)
+		local color = STATUS_COLORS[status] or palette.textMuted
 
-		if text then
-			text.Text = value
+		title.Text = STATUS_LABEL[status] or status
+		title.TextColor3 = palette.text
+		subtitle.Text = status == "running"
+			and ("Capturing · %d events"):format(context.uiState:get("eventCount", 0))
+			or "No active session"
+
+		indicator.BackgroundColor3 = color
+		ring.Color = color
+		ring.Transparency = 0.2
+
+		for _, child in ipairs(icon:GetChildren()) do
+			if child:IsA("Frame") then
+				local childStroke = child:FindFirstChild("UIStroke")
+				if childStroke then
+					childStroke.Color = color
+				else
+					child.BackgroundColor3 = color
+				end
+			end
 		end
 
-		local color = STATUS_COLORS[value] or palette.textMuted
-		local stroke = status:FindFirstChildOfClass("UIStroke")
-
-		if stroke then
-			stroke.Color = color
-		end
-
-		if text then
-			text.TextColor3 = color
-		end
+		Motion.tween(indicator, Theme.Motion.easeOut, { BackgroundTransparency = status == "running" and 0.7 or 0.82 })
 	end
 
 	maid:Add(context.uiState.ChangedKey:Connect(function(key)
 		if key == "recorderStatus" then
-			refresh()
+			setStatus(context.uiState:get("recorderStatus", "idle"))
+		elseif key == "eventCount" then
+			setStatus(context.uiState:get("recorderStatus", "idle"))
 		end
 	end))
 
@@ -152,14 +263,15 @@ function RecorderPage.create(context, parent)
 		end))
 	end
 
-	refresh()
+	setStatus(context.uiState:get("recorderStatus", "idle"))
+
+	local function refresh()
+		setStatus(context.uiState:get("recorderStatus", "idle"))
+	end
 
 	return {
 		frame = frame,
 		refresh = refresh,
-		destroy = function()
-			maid:Destroy()
-		end,
 	}
 end
 

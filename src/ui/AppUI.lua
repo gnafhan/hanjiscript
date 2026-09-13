@@ -2,7 +2,10 @@ local require = ...
 
 local Theme = require("ui.Theme")
 local Components = require("ui.Components")
+local Motion = require("ui.Motion")
+local Icons = require("ui.Icons")
 local UIState = require("ui.UIState")
+local Notifications = require("ui.Notifications")
 local Maid = require("utils.Maid")
 
 local DashboardPage = require("ui.pages.DashboardPage")
@@ -11,6 +14,7 @@ local RecorderPage = require("ui.pages.RecorderPage")
 local SettingsPage = require("ui.pages.SettingsPage")
 
 local palette = Theme.Dark
+local Layout = Theme.Layout
 
 local PAGE_MODULES = {
 	DashboardPage,
@@ -40,11 +44,17 @@ local function getGuiParent()
 	return nil
 end
 
+local function clamp(value, minimum, maximum)
+	return math.max(minimum, math.min(maximum, value))
+end
+
 function AppUI.new(context)
 	local config = context.config
 	local adapter = context.adapter
 	local experience = context.experience or {}
 	local runtime = context.runtime or {}
+
+	local versions = context.versions or {}
 
 	local state = UIState.new({
 		visible = config and config:get("ui.startVisible", true) or true,
@@ -60,6 +70,7 @@ function AppUI.new(context)
 		environment = runtime.environment or "unknown",
 		eventCount = 0,
 		lastLog = "ready",
+		version = versions.framework or "0.1.0",
 	})
 
 	return setmetatable({
@@ -67,14 +78,23 @@ function AppUI.new(context)
 		state = state,
 		_maid = Maid.new(),
 		_pages = {},
-		_navButtons = {},
-		_pageFrames = {},
+		_pageHosts = {},
+		_navItems = {},
 		_mounted = false,
+		_activePage = nil,
+		_expandedSize = UDim2.fromOffset(Layout.windowWidth, Layout.windowHeight),
 	}, AppUI)
 end
 
 function AppUI:getState()
 	return self.state
+end
+
+function AppUI:notify(options)
+	if self._notifications then
+		return self._notifications:push(options)
+	end
+	return nil
 end
 
 function AppUI:_buildScreen()
@@ -84,7 +104,7 @@ function AppUI:_buildScreen()
 		error("AppUI: unable to resolve a Gui parent (CoreGui/PlayerGui)", 2)
 	end
 
-	local screen = Components.create("ScreenGui", {
+	self._screen = Components.create("ScreenGui", {
 		Name = "HanjiScript",
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
@@ -93,192 +113,376 @@ function AppUI:_buildScreen()
 		parent = parent,
 	})
 
-	self._screen = screen
+	self._notifications = Notifications.new(self._screen)
 end
 
 function AppUI:_buildWindow()
-	local window = Components.create("Frame", {
-		Name = "Window",
+	local shadow = Components.create("Frame", {
+		Name = "Shadow",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(660, 420),
-		BackgroundColor3 = palette.background,
+		Size = UDim2.fromOffset(Layout.windowWidth + 22, Layout.windowHeight + 22),
+		BackgroundColor3 = palette.shadow,
+		BackgroundTransparency = 0.55,
 		BorderSizePixel = 0,
-		ClipsDescendants = true,
+		ZIndex = 1,
 		parent = self._screen,
 	})
 
-	Components.corner(window, Theme.Radius.lg)
+	Components.corner(shadow, Theme.Radius.xl)
+	self._shadow = shadow
+
+	local window = Components.create("CanvasGroup", {
+		Name = "Window",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = self._expandedSize,
+		BackgroundColor3 = palette.background,
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		GroupTransparency = 1,
+		ZIndex = 2,
+		parent = self._screen,
+	})
+
+	Components.corner(window, Theme.Radius.xl)
 	Components.stroke(window, palette.border)
+	Components.gradient(window, ColorSequence.new({
+		ColorSequenceKeypoint.new(0, palette.backgroundTop),
+		ColorSequenceKeypoint.new(1, palette.background),
+	}), 90)
 
 	self._window = window
-	self._expandedSize = UDim2.fromOffset(660, 420)
 end
 
-function AppUI:_buildTitleBar()
+function AppUI:_buildTopbar()
 	local bar = Components.create("Frame", {
-		Name = "TitleBar",
-		Size = UDim2.new(1, 0, 0, 36),
-		BackgroundColor3 = palette.surface,
+		Name = "Topbar",
+		Size = UDim2.new(1, 0, 0, Layout.topbarHeight),
+		BackgroundColor3 = palette.backgroundTop,
+		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
+		ZIndex = 3,
 		parent = self._window,
 	})
 
-	Components.corner(bar, Theme.Radius.lg)
-
-	local cover = Components.create("Frame", {
-		Name = "CornerCover",
-		Position = UDim2.new(0, 0, 1, -Theme.Radius.lg),
-		Size = UDim2.new(1, 0, 0, Theme.Radius.lg),
-		BackgroundColor3 = palette.surface,
+	local logo = Components.create("Frame", {
+		Name = "Logo",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(26, 26),
+		BackgroundColor3 = palette.accent,
 		BorderSizePixel = 0,
 		parent = bar,
 	})
 
-	cover.ZIndex = 1
+	Components.corner(logo, Theme.Radius.sm)
+	Components.gradient(logo, ColorSequence.new({
+		ColorSequenceKeypoint.new(0, palette.accentHover),
+		ColorSequenceKeypoint.new(1, palette.accent),
+	}), 45)
 
-	Components.label(bar, {
-		Name = "Title",
-		Text = "HanjiScript  ·  Roblox Automation Platform",
-		Font = Theme.Font.bold,
-		TextSize = Theme.TextSize.sm,
-		Position = UDim2.fromOffset(Theme.Spacing.md, 0),
-		Size = UDim2.new(1, -140, 1, 0),
-		parent = bar,
+	Icons.create(logo, "activity", {
+		size = 16,
+		color = Color3.fromRGB(250, 250, 255),
+		anchorPoint = Vector2.new(0.5, 0.5),
+		position = UDim2.fromScale(0.5, 0.5),
 	})
 
-	local close = Components.button(bar, {
-		Name = "Close",
-		Text = "×",
-		Size = UDim2.fromOffset(28, 28),
-		Position = UDim2.new(1, -34, 0, 4),
-		BackgroundColor3 = palette.surfaceAlt,
-		textSize = Theme.TextSize.lg,
-	}, function()
-		self.state:set("visible", false)
-	end)
+	Components.label(bar, {
+		text = "HanjiScript",
+		font = Theme.Font.title,
+		textSize = Theme.Text.subtitle,
+		color = palette.text,
+		position = UDim2.new(0, 52, 0, 8),
+		size = UDim2.new(1, -140, 0, 16),
+	})
 
-	close.ZIndex = 2
+	Components.label(bar, {
+		text = "Roblox Automation Platform",
+		font = Theme.Font.body,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		position = UDim2.new(0, 52, 0, 24),
+		size = UDim2.new(1, -140, 0, 14),
+	})
 
-	local minimize = Components.button(bar, {
-		Name = "Minimize",
-		Text = "—",
-		Size = UDim2.fromOffset(28, 28),
-		Position = UDim2.new(1, -66, 0, 4),
-		BackgroundColor3 = palette.surfaceAlt,
-	}, function()
-		self.state:set("minimized", not self.state:get("minimized"))
-	end)
+	self._closeButton = Components.iconButton(bar, {
+		name = "Close",
+		icon = "close",
+		iconSize = 12,
+		size = 30,
+		variant = "ghost",
+		anchorPoint = Vector2.new(1, 0.5),
+		position = UDim2.new(1, -11, 0.5, 0),
+	})
 
-	minimize.ZIndex = 2
+	self._minimizeButton = Components.iconButton(bar, {
+		name = "Minimize",
+		icon = "minimize",
+		iconSize = 12,
+		size = 30,
+		variant = "ghost",
+		anchorPoint = Vector2.new(1, 0.5),
+		position = UDim2.new(1, -45, 0.5, 0),
+	})
+
+	Components.divider(bar, 0).Position = UDim2.new(0, 0, 1, -1)
 
 	self:_makeDraggable(bar, self._window)
+
+	return bar
 end
 
 function AppUI:_buildBody()
 	local body = Components.create("Frame", {
 		Name = "Body",
-		Position = UDim2.fromOffset(0, 36),
-		Size = UDim2.new(1, 0, 1, -58),
+		Position = UDim2.fromOffset(0, Layout.topbarHeight),
+		Size = UDim2.new(1, 0, 1, -(Layout.topbarHeight + Layout.statusbarHeight)),
 		BackgroundTransparency = 1,
 		parent = self._window,
 	})
 
-	self._body = body
-
 	local sidebar = Components.create("Frame", {
 		Name = "Sidebar",
-		Size = UDim2.fromOffset(150, 1),
-		BackgroundColor3 = palette.surface,
+		Size = UDim2.fromOffset(Layout.sidebarWidth, 1),
+		BackgroundColor3 = palette.background,
+		BackgroundTransparency = 0.4,
 		BorderSizePixel = 0,
 		parent = body,
 	})
 
-	sidebar.Size = UDim2.new(0, 150, 1, 0)
-	Components.corner(sidebar, Theme.Radius.sm)
-	Components.padding(sidebar, {
-		top = Theme.Spacing.md,
-		bottom = Theme.Spacing.md,
-		left = Theme.Spacing.sm,
-		right = Theme.Spacing.sm,
-	})
-	Components.list(sidebar, { gap = Theme.Spacing.xs })
+	sidebar.Size = UDim2.new(0, Layout.sidebarWidth, 1, 0)
 
-	self._sidebar = sidebar
+	local sidebarInner = Components.create("Frame", {
+		Name = "Inner",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		parent = sidebar,
+	})
+
+	Components.padding(sidebarInner, { top = Theme.Spacing.md, bottom = Theme.Spacing.md, left = Theme.Spacing.md, right = Theme.Spacing.md })
+	Components.list(sidebarInner, { gap = Theme.Spacing.xs })
+
+	self._sidebarInner = sidebarInner
+
+	local separator = Components.create("Frame", {
+		Name = "Separator",
+		Position = UDim2.new(1, -1, 0, 0),
+		Size = UDim2.new(0, 1, 1, 0),
+		BackgroundColor3 = palette.border,
+		BorderSizePixel = 0,
+		parent = sidebar,
+	})
 
 	local content = Components.create("Frame", {
 		Name = "Content",
-		Position = UDim2.fromOffset(158, 0),
-		Size = UDim2.new(1, -166, 1, 0),
+		Position = UDim2.fromOffset(Layout.sidebarWidth, 0),
+		Size = UDim2.new(1, -Layout.sidebarWidth, 1, 0),
 		BackgroundTransparency = 1,
 		parent = body,
 	})
 
 	self._content = content
+
+	local header = Components.create("Frame", {
+		Name = "Header",
+		Size = UDim2.new(1, 0, 0, 60),
+		BackgroundTransparency = 1,
+		parent = content,
+	})
+
+	Components.padding(header, { top = Theme.Spacing.lg, left = Theme.Spacing.xl, right = Theme.Spacing.xl })
+
+	self._headerTitle = Components.label(header, {
+		text = "Dashboard",
+		font = Theme.Font.display,
+		textSize = Theme.Text.title,
+		color = palette.text,
+		position = UDim2.fromScale(0, 0),
+		size = UDim2.new(1, -180, 0, 22),
+	})
+
+	self._headerSubtitle = Components.label(header, {
+		text = "Overview",
+		font = Theme.Font.body,
+		textSize = Theme.Text.caption,
+		color = palette.textMuted,
+		position = UDim2.fromOffset(0, 24),
+		size = UDim2.new(1, -180, 0, 14),
+	})
+
+	self._headerPill = Components.statusPill(header, {
+		text = "idle",
+		anchorPoint = Vector2.new(1, 0.5),
+		position = UDim2.new(1, 0, 0.5, 0),
+	})
+
+	Components.divider(content, 1).Position = UDim2.new(0, 0, 0, 60)
+
+	local pageHost = Components.create("Frame", {
+		Name = "PageHost",
+		Position = UDim2.fromOffset(0, 61),
+		Size = UDim2.new(1, 0, 1, -61),
+		BackgroundTransparency = 1,
+		parent = content,
+	})
+
+	Components.padding(pageHost, { top = Theme.Spacing.lg, left = Theme.Spacing.xl, right = Theme.Spacing.xl, bottom = Theme.Spacing.lg })
+
+	self._pageHost = pageHost
 end
 
-function AppUI:_buildStatusBar()
+function AppUI:_buildStatusbar()
 	local bar = Components.create("Frame", {
-		Name = "StatusBar",
-		Position = UDim2.new(0, 0, 1, -22),
-		Size = UDim2.new(1, 0, 0, 22),
-		BackgroundColor3 = palette.surface,
+		Name = "Statusbar",
+		Position = UDim2.new(0, 0, 1, -Layout.statusbarHeight),
+		Size = UDim2.new(1, 0, 0, Layout.statusbarHeight),
+		BackgroundColor3 = palette.backgroundTop,
+		BackgroundTransparency = 0.25,
 		BorderSizePixel = 0,
+		ZIndex = 3,
 		parent = self._window,
 	})
 
-	Components.corner(bar, Theme.Radius.sm)
+	Components.divider(bar, 0).Position = UDim2.new(0, 0, 0, 0)
 
 	self._statusLabel = Components.label(bar, {
-		Name = "Status",
-		Text = "booting...",
-		TextSize = Theme.TextSize.xs,
-		TextColor3 = palette.textMuted,
-		Position = UDim2.fromOffset(Theme.Spacing.md, 0),
-		Size = UDim2.new(1, -180, 1, 0),
-		parent = bar,
+		text = "booting...",
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		truncate = Enum.TextTruncate.AtEnd,
+		position = UDim2.new(0, 16, 0, 0),
+		size = UDim2.new(1, -280, 1, 0),
 	})
 
-	self._versionLabel = Components.label(bar, {
-		Name = "Version",
-		Text = "v0.1.0",
-		TextSize = Theme.TextSize.xs,
-		TextColor3 = palette.textMuted,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Position = UDim2.new(1, -160, 0, 0),
-		Size = UDim2.fromOffset(148, 22),
-		parent = bar,
+	local adapter = self.state:get("adapterId", "none")
+	local platform = self.state:get("platform", "unknown")
+	local version = self.state:get("version", "0.1.0")
+
+	self._metaLabel = Components.label(bar, {
+		text = ("%s  ·  %s  ·  v%s"):format(adapter, platform, version),
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		align = Enum.TextXAlignment.Right,
+		anchorPoint = Vector2.new(1, 0),
+		position = UDim2.new(1, -16, 0, 0),
+		size = UDim2.fromOffset(260, Layout.statusbarHeight),
 	})
+end
+
+function AppUI:_buildResizeHandle()
+	local handle = Components.create("TextButton", {
+		Name = "Resize",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(20, 20),
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -2, 1, -2),
+		Text = "",
+		ZIndex = 5,
+		parent = self._window,
+	})
+
+	Icons.create(handle, "activity", {
+		size = 10,
+		color = palette.textFaint,
+		anchorPoint = Vector2.new(0.5, 0.5),
+		position = UDim2.fromScale(0.62, 0.62),
+		rotation = 0,
+	})
+
+	self:_makeResizable(handle, self._window)
 end
 
 function AppUI:_mountPages()
 	for _, pageModule in ipairs(PAGE_MODULES) do
-		local page = pageModule.create(self.context, self._content)
+		local host = Components.create("CanvasGroup", {
+			Name = "Host_" .. pageModule.id,
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			GroupTransparency = 1,
+			Visible = false,
+			parent = self._pageHost,
+		})
 
-		if type(page) == "table" and page.frame then
-			page.frame.Visible = false
-			self._pages[pageModule.id] = page
-			self._pageFrames[pageModule.id] = page.frame
-		else
-			page.Visible = false
-			self._pages[pageModule.id] = { frame = page }
-			self._pageFrames[pageModule.id] = page
+		local page = pageModule.create(self.context, host)
+
+		if type(page) ~= "table" then
+			page = { frame = page }
 		end
 
-		Components.button(self._sidebar, {
-			name = pageModule.id,
+		self._pages[pageModule.id] = page
+		self._pageHosts[pageModule.id] = host
+
+		local nav = Components.navItem(self._sidebarInner, {
+			id = pageModule.id,
 			text = pageModule.title,
-			align = Enum.TextXAlignment.Left,
-			background = palette.surfaceAlt,
-			color = palette.textMuted,
-			height = 32,
+			icon = pageModule.icon or "dot",
+			active = false,
 			layoutOrder = pageModule.order or 0,
 		}, function()
 			self:showPage(pageModule.id)
 		end)
 
-		self._navButtons[pageModule.id] = self._sidebar:FindFirstChild(pageModule.id)
+		self._navItems[pageModule.id] = nav
 	end
+end
+
+function AppUI:_buildMeta()
+	local footer = Components.create("Frame", {
+		Name = "Footer",
+		Size = UDim2.new(1, 0, 0, 46),
+		BackgroundTransparency = 1,
+		LayoutOrder = 1000,
+		parent = self._sidebarInner,
+	})
+
+	Components.divider(footer, 0).Position = UDim2.new(0, 0, 0, 0)
+
+	local dot = Components.create("Frame", {
+		Name = "Dot",
+		BackgroundColor3 = palette.success,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 1, 0.5, 0),
+		Size = UDim2.fromOffset(7, 7),
+		parent = footer,
+	})
+
+	Components.corner(dot, 0.5)
+
+	local pulse = Instance.new("UIScale")
+	pulse.Scale = 1
+	pulse.Parent = dot
+
+	task.spawn(function()
+		while dot.Parent do
+			Motion.tween(dot, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundTransparency = 0.6 })
+			task.wait(1.4)
+			Motion.tween(dot, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundTransparency = 0 })
+			task.wait(1.4)
+		end
+	end)
+
+	Components.label(footer, {
+		text = "operational",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.micro,
+		color = palette.success,
+		position = UDim2.fromOffset(14, 12),
+		size = UDim2.new(1, -14, 0, 14),
+	})
+
+	Components.label(footer, {
+		text = "v" .. tostring(self.state:get("version", "0.1.0")),
+		font = Theme.Font.mono,
+		textSize = Theme.Text.micro,
+		color = palette.textFaint,
+		position = UDim2.fromOffset(14, 26),
+		size = UDim2.new(1, -14, 0, 14),
+	})
 end
 
 function AppUI:_bindState()
@@ -290,19 +494,55 @@ function AppUI:_bindState()
 		elseif key == "activePage" then
 			self:_applyPage(value)
 		elseif key == "lastLog" then
-			self._statusLabel.Text = tostring(value)
+			if self._statusLabel then
+				self._statusLabel.Text = tostring(value)
+			end
+		elseif key == "recorderStatus" then
+			self:_applyRecorderStatus(value)
 		end
 	end))
 
 	self._maid:Add(self.context.logger.Emitted:Connect(function(entry)
 		self.state:set("eventCount", self.state:get("eventCount", 0) + 1)
 		self.state:set("lastLog", ("[%s] %s"):format(entry.tag, entry.message))
+
+		if entry.level >= 40 and self._notifications then
+			self._notifications:error(entry.message, entry.tag)
+		elseif entry.level >= 30 and self._notifications then
+			self._notifications:warn(entry.message, entry.tag)
+		end
 	end))
 end
 
+function AppUI:_applyRecorderStatus(status)
+	if not self._headerPill then
+		return
+	end
+
+	local colors = {
+		idle = palette.textMuted,
+		starting = palette.warn,
+		running = palette.success,
+		paused = palette.warn,
+		stopping = palette.warn,
+		stopped = palette.textMuted,
+		failed = palette.danger,
+	}
+
+	local color = colors[status] or palette.textMuted
+	self._headerPill.set(status, color, color)
+end
+
 function AppUI:_applyVisibility(visible)
-	if self._screen then
-		self._screen.Enabled = visible == true
+	if not self._screen then
+		return
+	end
+
+	self._screen.Enabled = visible == true
+
+	if visible then
+		self._window.GroupTransparency = 1
+		Motion.tween(self._window, TweenInfo.new(0.34, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { GroupTransparency = 0 })
 	end
 end
 
@@ -312,25 +552,53 @@ function AppUI:_applyMinimized(minimized)
 	end
 
 	if minimized then
-		self._window.Size = UDim2.fromOffset(660, 36)
+		Motion.tween(self._window, Theme.Motion.easeInOut, {
+			Size = UDim2.fromOffset(self._expandedSize.X.Offset, Layout.topbarHeight + Layout.statusbarHeight),
+			GroupTransparency = 0.15,
+		})
 	else
-		self._window.Size = self._expandedSize
+		Motion.tween(self._window, Theme.Motion.easeInOut, { Size = self._expandedSize, GroupTransparency = 0 })
 	end
 end
 
 function AppUI:_applyPage(activeId)
-	for id, frame in pairs(self._pageFrames) do
-		frame.Visible = id == activeId
+	local previous = self._activePage
+
+	if previous and previous ~= activeId and self._pageHosts[previous] then
+		self._pageHosts[previous].Visible = false
 	end
 
-	for id, button in pairs(self._navButtons) do
-		if id == activeId then
-			button.BackgroundColor3 = palette.accentMuted
-			button.TextColor3 = palette.text
-		else
-			button.BackgroundColor3 = palette.surfaceAlt
-			button.TextColor3 = palette.textMuted
+	local host = self._pageHosts[activeId]
+
+	if not host then
+		return
+	end
+
+	self._activePage = activeId
+	host.Visible = true
+	host.GroupTransparency = 1
+	host.Position = UDim2.fromOffset(0, 10)
+
+	Motion.tween(host, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+		GroupTransparency = 0,
+		Position = UDim2.fromOffset(0, 0),
+	})
+
+	for id, nav in pairs(self._navItems) do
+		nav.setActive(id == activeId)
+	end
+
+	local pageModule
+	for _, module in ipairs(PAGE_MODULES) do
+		if module.id == activeId then
+			pageModule = module
+			break
 		end
+	end
+
+	if pageModule then
+		self._headerTitle.Text = pageModule.title
+		self._headerSubtitle.Text = pageModule.subtitle or ""
 	end
 
 	local page = self._pages[activeId]
@@ -354,6 +622,16 @@ function AppUI:_makeDraggable(handle, target)
 	local dragStart
 	local startPosition
 
+	local function update(input)
+		local delta = input.Position - dragStart
+		target.Position = UDim2.new(
+			startPosition.X.Scale,
+			startPosition.X.Offset + delta.X,
+			startPosition.Y.Scale,
+			startPosition.Y.Offset + delta.Y
+		)
+	end
+
 	self._maid:Add(handle.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
 			or input.UserInputType == Enum.UserInputType.Touch then
@@ -371,23 +649,49 @@ function AppUI:_makeDraggable(handle, target)
 	end))
 
 	self._maid:Add(userInput.InputChanged:Connect(function(input)
-		if not dragging then
-			return
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
 		end
+	end))
+end
 
-		if input.UserInputType ~= Enum.UserInputType.MouseMovement
-			and input.UserInputType ~= Enum.UserInputType.Touch then
-			return
+function AppUI:_makeResizable(handle, target)
+	local userInput = game:GetService("UserInputService")
+	local resizing = false
+	local resizeStart
+	local startSize
+
+	local function update(input)
+		local delta = input.Position - resizeStart
+		local width = clamp(startSize.X.Offset + delta.X, Layout.minWidth, 2400)
+		local height = clamp(startSize.Y.Offset + delta.Y, Layout.minHeight, 1800)
+		self._expandedSize = UDim2.fromOffset(width, height)
+		target.Size = self._expandedSize
+		self._shadow.Size = UDim2.fromOffset(width + 22, height + 22)
+	end
+
+	self._maid:Add(handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			resizing = true
+			resizeStart = input.Position
+			startSize = target.Size
 		end
+	end))
 
-		local delta = input.Position - dragStart
+	self._maid:Add(handle.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			resizing = false
+		end
+	end))
 
-		target.Position = UDim2.new(
-			startPosition.X.Scale,
-			startPosition.X.Offset + delta.X,
-			startPosition.Y.Scale,
-			startPosition.Y.Offset + delta.Y
-		)
+	self._maid:Add(userInput.InputChanged:Connect(function(input)
+		if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
 	end))
 end
 
@@ -397,17 +701,38 @@ function AppUI:mount()
 	end
 
 	self._mounted = true
+
 	self:_buildScreen()
 	self:_buildWindow()
-	self:_buildTitleBar()
+	self:_buildTopbar()
 	self:_buildBody()
-	self:_buildStatusBar()
+	self:_buildStatusbar()
+	self:_buildResizeHandle()
 	self:_mountPages()
+	self:_buildMeta()
 	self:_bindState()
 
+	self._closeButton.MouseButton1Click:Connect(function()
+		Motion.tween(self._window, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { GroupTransparency = 1 })
+
+		task.delay(0.2, function()
+			self.state:set("visible", false)
+		end)
+	end)
+
+	self._minimizeButton.MouseButton1Click:Connect(function()
+		self.state:set("minimized", not self.state:get("minimized"))
+	end)
+
 	self:showPage(self.state:get("activePage"))
-	self:_applyVisibility(self.state:get("visible"))
-	self:_applyMinimized(self.state:get("minimized"))
+	self:_applyRecorderStatus(self.state:get("recorderStatus", "idle"))
+
+	if self.state:get("visible", true) then
+		self._screen.Enabled = true
+		Motion.tween(self._window, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { GroupTransparency = 0 })
+	else
+		self._screen.Enabled = false
+	end
 
 	return self
 end
