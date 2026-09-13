@@ -3,7 +3,6 @@ local require = ...
 local Theme = require("ui.Theme")
 local Components = require("ui.Components")
 local Icons = require("ui.Icons")
-local Motion = require("ui.Motion")
 local Maid = require("utils.Maid")
 
 local palette = Theme.Dark
@@ -16,28 +15,25 @@ local DashboardPage = {
 	order = 1,
 }
 
-local function statCard(parent, options)
+local function metricCard(parent, options)
 	local card = Components.card(parent, {
-		name = options.name or "StatCard",
-		padding = Theme.Spacing.md,
+		name = options.name or "Metric",
+		padding = Theme.Spacing.lg,
 		layoutOrder = options.order or 0,
 	})
 
 	local accent = options.accent or palette.accent
-
-	local tile = Components.create("Frame", {
-		Name = "Tile",
+	local iconTile = Components.create("Frame", {
+		Name = "IconTile",
 		BackgroundColor3 = accent,
-		BackgroundTransparency = 0.84,
+		BackgroundTransparency = 0.82,
 		BorderSizePixel = 0,
-		Size = UDim2.fromOffset(28, 28),
+		Size = UDim2.fromOffset(34, 34),
 		parent = card,
 	})
-
-	Components.corner(tile, Theme.Radius.sm)
-
-	Icons.create(tile, options.icon or "dot", {
-		size = 15,
+	Components.corner(iconTile, Theme.Radius.md)
+	Icons.create(iconTile, options.icon or "dot", {
+		size = 16,
 		color = accent,
 		anchorPoint = Vector2.new(0.5, 0.5),
 		position = UDim2.fromScale(0.5, 0.5),
@@ -48,17 +44,18 @@ local function statCard(parent, options)
 		font = Theme.Font.medium,
 		textSize = Theme.Text.micro,
 		color = palette.textMuted,
-		position = UDim2.fromOffset(38, 6),
-		size = UDim2.new(1, -38, 0, 16),
+		position = UDim2.fromOffset(46, 1),
+		size = UDim2.new(1, -46, 0, 18),
 	})
 
 	local value = Components.label(card, {
 		text = "—",
-		font = Theme.Font.display,
+		font = Theme.Font.title,
 		textSize = Theme.Text.title,
 		color = palette.text,
-		position = UDim2.fromOffset(0, 36),
-		size = UDim2.new(1, 0, 0, 22),
+		truncate = Enum.TextTruncate.AtEnd,
+		position = UDim2.fromOffset(0, 50),
+		size = UDim2.new(1, 0, 0, 24),
 	})
 
 	local meta = Components.label(card, {
@@ -66,8 +63,9 @@ local function statCard(parent, options)
 		font = Theme.Font.body,
 		textSize = Theme.Text.caption,
 		color = palette.textMuted,
-		position = UDim2.fromOffset(0, 60),
-		size = UDim2.new(1, 0, 0, 16),
+		truncate = Enum.TextTruncate.AtEnd,
+		position = UDim2.fromOffset(0, 78),
+		size = UDim2.new(1, 0, 0, 18),
 	})
 
 	return {
@@ -82,116 +80,116 @@ local function statCard(parent, options)
 end
 
 function DashboardPage.create(context, parent)
-	local frame = Components.create("Frame", {
+	local frame = Components.create("ScrollingFrame", {
 		Name = "DashboardPage",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		parent = parent,
-	})
-
-	Components.list(frame, { gap = Theme.Spacing.md })
-
-	local gridHolder = Components.create("Frame", {
-		Name = "Stats",
-		Size = UDim2.new(1, 0, 0, 202),
-		BackgroundTransparency = 1,
-		LayoutOrder = 0,
-		parent = frame,
-	})
-
-	Components.grid(gridHolder, {
-		cellSize = UDim2.new(0.5, -6, 0, 96),
-		cellPadding = UDim2.fromOffset(12, 10),
-		maxCells = 2,
-	})
-
-	local stats = {
-		experience = statCard(gridHolder, { label = "Experience", icon = "dashboard", accent = palette.accent, order = 1 }),
-		adapter = statCard(gridHolder, { label = "Adapter", icon = "settings", accent = palette.info, order = 2 }),
-		runtime = statCard(gridHolder, { label = "Runtime", icon = "activity", accent = palette.success, order = 3 }),
-		events = statCard(gridHolder, { label = "Events", icon = "recorder", accent = palette.warn, order = 4 }),
-	}
-
-	local actions = Components.card(frame, {
-		name = "Actions",
-		padding = Theme.Spacing.md,
-		gap = Theme.Spacing.md,
-		size = UDim2.new(1, 0, 0, 96),
-		layoutOrder = 1,
-	})
-
-	Components.label(actions, {
-		text = "Quick Actions",
-		font = Theme.Font.medium,
-		textSize = Theme.Text.label,
-		color = palette.textSecondary,
-		size = UDim2.new(1, 0, 0, 16),
-		layoutOrder = 0,
-	})
-
-	local actionRow = Components.create("Frame", {
-		Name = "Row",
-		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundTransparency = 1,
-		LayoutOrder = 1,
-		parent = actions,
-	})
-
-	Components.list(actionRow, { direction = Enum.FillDirection.Horizontal, gap = Theme.Spacing.sm })
-
-	local function action(text, command, variant, icon, order)
-		local button = Components.button(actionRow, {
-			text = text,
-			variant = variant,
-			icon = icon,
-			size = UDim2.fromOffset(150, 34),
-			layoutOrder = order,
-		}, function()
-			local ok, err = context.commandBus:execute(command)
-
-			if not ok then
-				context.logger:warn("Dashboard", err)
-			end
-		end)
-
-		return button
-	end
-
-	action("Start Recorder", "recorder.start", "primary", "recorder", 1)
-	action("Stop Recorder", "recorder.stop", "secondary", "minimize", 2)
-	action("Toggle Window", "ui.toggle", "ghost", "dashboard", 3)
-
-	local activity = Components.card(frame, {
-		name = "Activity",
-		padding = Theme.Spacing.md,
-		gap = Theme.Spacing.sm,
-		size = UDim2.new(1, 0, 0, 150),
-		layoutOrder = 2,
-	})
-
-	Components.label(activity, {
-		text = "Recent Activity",
-		font = Theme.Font.medium,
-		textSize = Theme.Text.label,
-		color = palette.textSecondary,
-		size = UDim2.new(1, 0, 0, 16),
-		layoutOrder = 0,
-	})
-
-	local scroll = Components.create("ScrollingFrame", {
-		Name = "Log",
-		Size = UDim2.new(1, 0, 1, -24),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 4,
 		ScrollBarImageColor3 = palette.borderStrong,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		LayoutOrder = 1,
-		parent = activity,
+		parent = parent,
+	})
+	Components.list(frame, { gap = Theme.Spacing.md })
+
+	local metrics = Components.create("Frame", {
+		Name = "Metrics",
+		Size = UDim2.new(1, 0, 0, 236),
+		BackgroundTransparency = 1,
+		LayoutOrder = 0,
+		parent = frame,
+	})
+	Components.grid(metrics, {
+		cellSize = UDim2.new(0.5, -6, 0, 112),
+		cellPadding = UDim2.fromOffset(12, 12),
+		maxCells = 2,
 	})
 
-	Components.list(scroll, { gap = 3 })
+	local stats = {
+		experience = metricCard(metrics, { label = "Experience", icon = "dashboard", accent = palette.accent, order = 1 }),
+		adapter = metricCard(metrics, { label = "Adapter", icon = "settings", accent = palette.info, order = 2 }),
+		runtime = metricCard(metrics, { label = "Runtime", icon = "activity", accent = palette.success, order = 3 }),
+		events = metricCard(metrics, { label = "Events captured", icon = "recorder", accent = palette.warn, order = 4 }),
+	}
+
+	local actions = Components.card(frame, {
+		name = "QuickActions",
+		padding = Theme.Spacing.lg,
+		size = UDim2.new(1, 0, 0, 102),
+		layoutOrder = 1,
+	})
+	Components.label(actions, {
+		text = "QUICK ACTIONS",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		size = UDim2.new(1, 0, 0, 18),
+	})
+	Components.label(actions, {
+		text = "Recorder controls",
+		font = Theme.Font.body,
+		textSize = Theme.Text.caption,
+		color = palette.textFaint,
+		position = UDim2.fromOffset(0, 18),
+		size = UDim2.new(1, 0, 0, 16),
+	})
+
+	local actionRow = Components.create("Frame", {
+		Name = "Actions",
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 0, 1, -38),
+		Size = UDim2.new(1, 0, 0, 38),
+		parent = actions,
+	})
+	Components.list(actionRow, { direction = Enum.FillDirection.Horizontal, gap = Theme.Spacing.sm })
+
+	local function action(text, command, variant, icon, order)
+		return Components.button(actionRow, {
+			text = text,
+			variant = variant,
+			icon = icon,
+			size = UDim2.new(1 / 3, -6, 0, 38),
+			layoutOrder = order,
+		}, function()
+			local ok, err = context.commandBus:execute(command)
+			if not ok then
+				context.logger:warn("Dashboard", err)
+			end
+		end)
+	end
+
+	action("Start", "recorder.start", "primary", "recorder", 1)
+	action("Stop", "recorder.stop", "secondary", "minimize", 2)
+	action("Hide window", "ui.toggle", "ghost", "dashboard", 3)
+
+	local activity = Components.card(frame, {
+		name = "Activity",
+		padding = Theme.Spacing.lg,
+		size = UDim2.new(1, 0, 0, 182),
+		layoutOrder = 2,
+	})
+	Components.label(activity, {
+		text = "RECENT ACTIVITY",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		size = UDim2.new(1, 0, 0, 18),
+	})
+
+	local scroll = Components.create("ScrollingFrame", {
+		Name = "Log",
+		Position = UDim2.fromOffset(0, 28),
+		Size = UDim2.new(1, 0, 1, -28),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 3,
+		ScrollBarImageColor3 = palette.borderStrong,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		parent = activity,
+	})
+	Components.list(scroll, { gap = 4 })
 
 	local maid = Maid.new()
 	local counter = 0
@@ -199,99 +197,75 @@ function DashboardPage.create(context, parent)
 
 	local function addEntry(entry)
 		counter += 1
-
-		local levelColor = palette.textMuted
-		if entry.level >= 40 then
-			levelColor = palette.danger
-		elseif entry.level >= 30 then
-			levelColor = palette.warn
-		elseif entry.level >= 20 then
-			levelColor = palette.info
-		end
+		local color = entry.level >= 40 and palette.danger
+			or entry.level >= 30 and palette.warn
+			or entry.level >= 20 and palette.info
+			or palette.textMuted
 
 		local row = Components.create("Frame", {
 			Name = "Entry",
-			Size = UDim2.new(1, 0, 0, 18),
-			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -4, 0, 24),
+			BackgroundColor3 = palette.surfaceAlt,
+			BackgroundTransparency = 0.58,
+			BorderSizePixel = 0,
 			LayoutOrder = -counter,
 			parent = scroll,
 		})
-
-		local dot = Components.create("Frame", {
-			Name = "Dot",
-			BackgroundColor3 = levelColor,
+		Components.corner(row, Theme.Radius.sm)
+		Components.create("Frame", {
+			Name = "Level",
+			BackgroundColor3 = color,
 			BorderSizePixel = 0,
-			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(0, 0, 0.5, 0),
-			Size = UDim2.fromOffset(6, 6),
+			Position = UDim2.new(0, 0, 0, 5),
+			Size = UDim2.fromOffset(3, 14),
 			parent = row,
 		})
-
-		Components.corner(dot, 0.5)
-
 		Components.label(row, {
-			text = ("[%s] %s"):format(entry.tag, entry.message),
+			text = ("%s  %s"):format(string.upper(entry.tag), entry.message),
 			font = Theme.Font.mono,
 			textSize = Theme.Text.micro,
 			color = palette.textSecondary,
 			truncate = Enum.TextTruncate.AtEnd,
-			position = UDim2.fromOffset(14, 0),
-			size = UDim2.new(1, -14, 1, 0),
+			position = UDim2.fromOffset(12, 0),
+			size = UDim2.new(1, -18, 1, 0),
 		})
 
 		if counter > MAX_ROWS then
-			local children = scroll:GetChildren()
-			local oldest
-			for _, child in ipairs(children) do
-				if child.Name == "Entry" then
-					if not oldest or child.LayoutOrder > oldest.LayoutOrder then
-						oldest = child
-					end
+			for _, child in ipairs(scroll:GetChildren()) do
+				if child.Name == "Entry" and child.LayoutOrder == -1 then
+					child:Destroy()
+					break
 				end
-			end
-			if oldest then
-				oldest:Destroy()
 			end
 		end
 	end
 
 	maid:Add(context.logger.Emitted:Connect(addEntry))
-
-	if frame.Destroying then
-		maid:Add(frame.Destroying:Connect(function()
-			maid:Destroy()
-		end))
-	end
+	maid:Add(frame.Destroying:Connect(function()
+		maid:Destroy()
+	end))
 
 	local function refresh()
 		local experience = context.experience or {}
 		local runtime = context.runtime or {}
 		local adapter = context.adapter
 		local state = context.uiState
-
-		stats.experience.setValue(experience.name or "Unknown")
-		stats.experience.setMeta(("PlaceId %s"):format(tostring(experience.placeId or 0)))
-
-		stats.adapter.setValue(adapter and adapter.id or "none")
-		stats.adapter.setMeta("fallback: universal")
-
-		stats.runtime.setValue(("%s"):format(runtime.environment or "unknown"))
-		stats.runtime.setMeta(("%s device"):format(runtime.platform or "unknown"))
-
+		stats.experience.setValue(experience.name or "Unknown experience")
+		stats.experience.setMeta(("Place ID %s"):format(tostring(experience.placeId or 0)))
+		stats.adapter.setValue(adapter and adapter.id or "None")
+		stats.adapter.setMeta("Universal compatibility layer")
+		stats.runtime.setValue(runtime.environment or "Unknown")
+		stats.runtime.setMeta((runtime.platform or "Unknown") .. " client")
 		stats.events.setValue(tostring(state and state:get("eventCount", 0) or 0))
-		stats.events.setMeta(("recorder: %s"):format(state and state:get("recorderStatus", "idle") or "idle"))
+		stats.events.setMeta("Recorder " .. (state and state:get("recorderStatus", "idle") or "idle"))
 	end
 
 	for _, entry in ipairs(context.logger:history()) do
 		addEntry(entry)
 	end
-
 	refresh()
 
-	return {
-		frame = frame,
-		refresh = refresh,
-	}
+	return { frame = frame, refresh = refresh }
 end
 
 return DashboardPage

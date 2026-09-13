@@ -264,6 +264,7 @@ function AppUI:_buildBody()
 		Position = UDim2.fromOffset(0, Layout.topbarHeight),
 		Size = UDim2.new(1, 0, 1, -(Layout.topbarHeight + Layout.statusbarHeight)),
 		BackgroundTransparency = 1,
+		ClipsDescendants = true,
 		parent = self._window,
 	})
 
@@ -305,6 +306,7 @@ function AppUI:_buildBody()
 		Position = UDim2.fromOffset(Layout.sidebarWidth, 0),
 		Size = UDim2.new(1, -Layout.sidebarWidth, 1, 0),
 		BackgroundTransparency = 1,
+		ClipsDescendants = true,
 		parent = body,
 	})
 
@@ -312,7 +314,7 @@ function AppUI:_buildBody()
 
 	local header = Components.create("Frame", {
 		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 60),
+		Size = UDim2.new(1, 0, 0, 70),
 		BackgroundTransparency = 1,
 		parent = content,
 	})
@@ -329,11 +331,11 @@ function AppUI:_buildBody()
 	})
 
 	self._headerSubtitle = Components.label(header, {
-		text = "Overview",
+		text = "System overview and quick actions",
 		font = Theme.Font.body,
 		textSize = Theme.Text.caption,
 		color = palette.textMuted,
-		position = UDim2.fromOffset(0, 24),
+		position = UDim2.fromOffset(0, 29),
 		size = UDim2.new(1, -180, 0, 14),
 	})
 
@@ -343,13 +345,14 @@ function AppUI:_buildBody()
 		position = UDim2.new(1, 0, 0.5, 0),
 	})
 
-	Components.divider(content, 1).Position = UDim2.new(0, 0, 0, 60)
+	Components.divider(content, 1).Position = UDim2.new(0, 0, 0, 70)
 
 	local pageHost = Components.create("Frame", {
 		Name = "PageHost",
-		Position = UDim2.fromOffset(0, 61),
-		Size = UDim2.new(1, 0, 1, -61),
+		Position = UDim2.fromOffset(0, 71),
+		Size = UDim2.new(1, 0, 1, -71),
 		BackgroundTransparency = 1,
+		ClipsDescendants = true,
 		parent = content,
 	})
 

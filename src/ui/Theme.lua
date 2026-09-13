@@ -1,30 +1,32 @@
 local Theme = {}
 
 Theme.Dark = {
-	background = Color3.fromRGB(24, 27, 36),
-	backgroundTop = Color3.fromRGB(38, 42, 56),
+	-- A restrained "mission control" palette: one strong action color and
+	-- neutral blue-black surfaces keep operational information easy to scan.
+	background = Color3.fromRGB(11, 16, 27),
+	backgroundTop = Color3.fromRGB(17, 24, 39),
 
-	surface = Color3.fromRGB(33, 37, 48),
-	surfaceAlt = Color3.fromRGB(44, 49, 63),
-	surfaceHover = Color3.fromRGB(58, 64, 82),
-	surfaceActive = Color3.fromRGB(72, 79, 102),
+	surface = Color3.fromRGB(20, 29, 47),
+	surfaceAlt = Color3.fromRGB(29, 40, 62),
+	surfaceHover = Color3.fromRGB(38, 52, 79),
+	surfaceActive = Color3.fromRGB(48, 65, 98),
 
-	border = Color3.fromRGB(66, 72, 92),
-	borderStrong = Color3.fromRGB(98, 106, 132),
+	border = Color3.fromRGB(51, 67, 96),
+	borderStrong = Color3.fromRGB(81, 103, 142),
 
-	text = Color3.fromRGB(250, 251, 255),
-	textSecondary = Color3.fromRGB(210, 215, 228),
-	textMuted = Color3.fromRGB(162, 169, 188),
-	textFaint = Color3.fromRGB(124, 131, 152),
+	text = Color3.fromRGB(244, 247, 255),
+	textSecondary = Color3.fromRGB(201, 211, 230),
+	textMuted = Color3.fromRGB(139, 155, 185),
+	textFaint = Color3.fromRGB(100, 116, 146),
 
-	accent = Color3.fromRGB(126, 156, 255),
-	accentHover = Color3.fromRGB(156, 180, 255),
-	accentSoft = Color3.fromRGB(64, 80, 134),
+	accent = Color3.fromRGB(89, 128, 255),
+	accentHover = Color3.fromRGB(120, 153, 255),
+	accentSoft = Color3.fromRGB(32, 57, 112),
 
-	success = Color3.fromRGB(92, 232, 148),
-	warn = Color3.fromRGB(255, 216, 96),
-	danger = Color3.fromRGB(252, 136, 136),
-	info = Color3.fromRGB(116, 178, 255),
+	success = Color3.fromRGB(73, 214, 142),
+	warn = Color3.fromRGB(251, 194, 69),
+	danger = Color3.fromRGB(244, 113, 129),
+	info = Color3.fromRGB(77, 171, 255),
 
 	shadow = Color3.fromRGB(0, 0, 0),
 }
@@ -43,19 +45,19 @@ Theme.Radius = {
 	xs = 4,
 	sm = 6,
 	md = 9,
-	lg = 13,
-	xl = 18,
+	lg = 12,
+	xl = 16,
 	pill = 999,
 }
 
 Theme.Text = {
-	display = 22,
-	title = 17,
-	subtitle = 13,
-	body = 13,
-	label = 12,
-	caption = 11,
-	micro = 10,
+	display = 24,
+	title = 18,
+	subtitle = 14,
+	body = 14,
+	label = 13,
+	caption = 12,
+	micro = 11,
 	mono = 12,
 }
 
@@ -79,13 +81,13 @@ Theme.Motion = {
 }
 
 Theme.Layout = {
-	windowWidth = 780,
-	windowHeight = 500,
-	minWidth = 560,
-	minHeight = 360,
-	topbarHeight = 46,
-	statusbarHeight = 26,
-	sidebarWidth = 208,
+	windowWidth = 960,
+	windowHeight = 620,
+	minWidth = 640,
+	minHeight = 440,
+	topbarHeight = 58,
+	statusbarHeight = 28,
+	sidebarWidth = 224,
 }
 
 function Theme.palette(_name)
