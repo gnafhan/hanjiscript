@@ -163,11 +163,54 @@ function DashboardPage.create(context, parent)
 	action("Stop", "recorder.stop", "secondary", "minimize", 2)
 	action("Hide window", "ui.toggle", "ghost", "dashboard", 3)
 
+	local snapshotCard = Components.card(frame, {
+		name = "RuntimeSnapshot",
+		padding = Theme.Spacing.lg,
+		size = UDim2.new(1, 0, 0, 118),
+		layoutOrder = 2,
+	})
+	Components.label(snapshotCard, {
+		text = "RUNTIME SNAPSHOT",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		size = UDim2.new(1, 0, 0, 18),
+	})
+
+	local snapshotLabels = {}
+	local snapshotFields = {
+		{ key = "WorldModel", position = UDim2.fromOffset(0, 28) },
+		{ key = "Workflow", position = UDim2.new(0.5, 0, 0, 28) },
+		{ key = "Target", position = UDim2.fromOffset(0, 67) },
+		{ key = "Inventory", position = UDim2.new(0.5, 0, 0, 67) },
+	}
+	for _, field in ipairs(snapshotFields) do
+		Components.label(snapshotCard, {
+			text = string.upper(field.key),
+			font = Theme.Font.medium,
+			textSize = Theme.Text.micro,
+			color = palette.textFaint,
+			position = field.position,
+			size = UDim2.new(0.5, -10, 0, 14),
+		})
+		snapshotLabels[field.key] = Components.label(snapshotCard, {
+			text = "—",
+			font = Theme.Font.mono,
+			textSize = Theme.Text.caption,
+			color = palette.text,
+			position = (field.key == "Workflow" or field.key == "Inventory")
+				and UDim2.new(0.5, 0, 0, field.position.Y.Offset + 14)
+				or UDim2.fromOffset(0, field.position.Y.Offset + 14),
+			size = UDim2.new(0.5, -10, 0, 16),
+			truncate = Enum.TextTruncate.AtEnd,
+		})
+	end
+
 	local activity = Components.card(frame, {
 		name = "Activity",
 		padding = Theme.Spacing.lg,
 		size = UDim2.new(1, 0, 0, 182),
-		layoutOrder = 2,
+		layoutOrder = 3,
 	})
 	Components.label(activity, {
 		text = "RECENT ACTIVITY",
@@ -262,6 +305,25 @@ function DashboardPage.create(context, parent)
 			state and state:get("recorderStatus", "idle") or "idle",
 			analytics.interactionsCompleted or 0
 		))
+
+		local world = context.world
+		local workflow = context.workflowRunner and context.workflowRunner:getSnapshot() or {}
+		local target = workflow.plan and workflow.plan.target
+		local inventory = context.inventorySensor and context.inventorySensor:getCount() or 0
+		local capacity = context.config:get("automation.inventoryCapacity", 20)
+		snapshotLabels.WorldModel.Text = world and ("%d entities"):format(world:count()) or "unavailable"
+		snapshotLabels.Workflow.Text = workflow.running and (workflow.state or "running") or "idle"
+		snapshotLabels.Target.Text = target and (target.name or target.path or "selected") or "—"
+		snapshotLabels.Inventory.Text = ("%d / %d items"):format(inventory, capacity)
+	end
+
+	for _, eventType in ipairs({
+		"workflow.state_changed",
+		"workflow.plan_updated",
+		"automation.state_changed",
+		"inventory.changed",
+	}) do
+		maid:Add(context.eventBus:on(eventType, refresh))
 	end
 
 	for _, entry in ipairs(context.logger:history()) do

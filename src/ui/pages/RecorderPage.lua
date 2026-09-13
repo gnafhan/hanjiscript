@@ -231,6 +231,9 @@ function RecorderPage.create(context, parent)
 		"semantic.action",
 		"workflow.state_changed",
 		"workflow.plan_updated",
+		"navigation.started",
+		"navigation.path_computed",
+		"navigation.completed",
 	}
 	for _, eventType in ipairs(recordedTypes) do
 		maid:Add(context.eventBus:on(eventType, function(data)
@@ -243,6 +246,10 @@ function RecorderPage.create(context, parent)
 					message = data.kind .. (data.target and (" · " .. tostring(data.target)) or "")
 				elseif eventType == "workflow.state_changed" and data.state then
 					message = data.previousState and (data.previousState .. " → " .. data.state) or data.state
+				elseif eventType == "navigation.path_computed" and data.pathLength then
+					message = ("%.1f studs · %d waypoints"):format(data.pathLength, data.waypoints or 0)
+				elseif eventType == "navigation.completed" and data.success ~= nil then
+					message = data.success and "path ready" or (data.reason or "failed")
 				end
 				append({ timestamp = os.clock() - recorder.startedAt, tag = eventType, message = message or "observed", level = 20 })
 			end
