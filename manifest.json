@@ -39,6 +39,7 @@
     "config.Config": "src/config/Config.lua",
     "telemetry.Logger": "src/telemetry/Logger.lua",
     "telemetry.Metrics": "src/telemetry/Metrics.lua",
+	"telemetry.Analytics": "src/telemetry/Analytics.lua",
     "ui.Theme": "src/ui/Theme.lua",
     "ui.UIState": "src/ui/UIState.lua",
     "ui.Motion": "src/ui/Motion.lua",

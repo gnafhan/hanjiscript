@@ -9,6 +9,7 @@ local EventTypes = require("core.EventTypes")
 local Config = require("config.Config")
 local Logger = require("telemetry.Logger")
 local Metrics = require("telemetry.Metrics")
+local Analytics = require("telemetry.Analytics")
 
 local AdapterRegistry = require("registry.AdapterRegistry")
 local UniversalAdapter = require("adapters.UniversalAdapter")
@@ -163,6 +164,8 @@ function Application:init()
 	context.recorder = SessionRecorder.new(context)
 	context.eventCorrelator = EventCorrelator.new(context)
 	context.eventCorrelator:start()
+	context.analytics = Analytics.new(context)
+	context.analytics:start()
 	context.workflowRunner = WorkflowRunner.new(context, Workflow.collectAndSell)
 
 	local ui = AppUI.new(context)
@@ -224,6 +227,7 @@ function Application:stop()
 	if context.inventorySensor then context.inventorySensor:stop() end
 	if context.recorder then context.recorder:stop() end
 	if context.eventCorrelator then context.eventCorrelator:stop() end
+	if context.analytics then context.analytics:stop() end
 	if context.workflowRunner then context.workflowRunner:stop() end
 	if context.world then context.world:destroy() end
 

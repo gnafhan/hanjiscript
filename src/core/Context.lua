@@ -13,6 +13,8 @@ local function defaultFields()
 		commandBus = nil,
 		metrics = nil,
 		world = {},
+		analytics = nil,
+		workflowRunner = nil,
 		adapters = nil,
 		features = nil,
 		ui = nil,

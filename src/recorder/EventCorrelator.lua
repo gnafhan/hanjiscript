@@ -13,6 +13,11 @@ function EventCorrelator:start()
 	self.maid:Add(self.context.eventBus:on(EventTypes.InteractionCompleted, function(data)
 		self.lastInteraction = { at = os.clock(), data = data }
 		self.context.eventBus:emit(EventTypes.SemanticAction, { kind = "interaction-completed", target = data.target })
+		local target = tostring(data.target or ""):lower()
+		if target:find("sell", 1, true) or target:find("shop", 1, true)
+			or target:find("merchant", 1, true) or target:find("vendor", 1, true) then
+			self.context.eventBus:emit(EventTypes.SemanticAction, { kind = "sell-candidate", target = data.target })
+		end
 	end))
 	self.maid:Add(self.context.eventBus:on(EventTypes.WorldEntityRemoved, function(entity)
 		local pending = self.lastInteraction

@@ -257,7 +257,11 @@ function DashboardPage.create(context, parent)
 		stats.runtime.setValue(runtime.environment or "Unknown")
 		stats.runtime.setMeta((runtime.platform or "Unknown") .. " client")
 		stats.events.setValue(tostring(state and state:get("eventCount", 0) or 0))
-		stats.events.setMeta("Recorder " .. (state and state:get("recorderStatus", "idle") or "idle"))
+		local analytics = context.analytics and context.analytics:snapshot() or {}
+		stats.events.setMeta(("Recorder %s · %d interactions"):format(
+			state and state:get("recorderStatus", "idle") or "idle",
+			analytics.interactionsCompleted or 0
+		))
 	end
 
 	for _, entry in ipairs(context.logger:history()) do
