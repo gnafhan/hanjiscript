@@ -2,7 +2,7 @@ local require = ...
 local Maid = require("utils.Maid")
 local EventTypes = require("core.EventTypes")
 local SessionRecorder={}; SessionRecorder.__index=SessionRecorder
-local TYPES={EventTypes.MovementSample,EventTypes.InteractionCompleted,EventTypes.WorldEntityAdded,EventTypes.WorldEntityRemoved,EventTypes.SemanticAction}
+local TYPES={EventTypes.MovementSample,EventTypes.InteractionCompleted,EventTypes.WorldEntityAdded,EventTypes.WorldEntityRemoved,EventTypes.InventoryChanged,EventTypes.SemanticAction}
 local function serializable(value, seen)
 	local kind=typeof(value)
 	if kind=="Vector3" then return {x=value.X,y=value.Y,z=value.Z} end

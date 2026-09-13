@@ -23,6 +23,13 @@ function EventCorrelator:start()
 			self.lastInteraction = nil
 		end
 	end))
+	self.maid:Add(self.context.eventBus:on(EventTypes.InventoryChanged, function(data)
+		if data.delta and data.delta > 0 then
+			self.context.eventBus:emit(EventTypes.SemanticAction, { kind = "inventory-gained", delta = data.delta })
+		elseif data.delta and data.delta < 0 then
+			self.context.eventBus:emit(EventTypes.SemanticAction, { kind = "inventory-spent", delta = data.delta })
+		end
+	end))
 end
 
 function EventCorrelator:stop() self.maid:Clean() end

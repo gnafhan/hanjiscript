@@ -22,6 +22,7 @@ local AppUI = require("ui.AppUI")
 local WorldModel = require("world.WorldModel")
 local MovementSensor = require("sensors.MovementSensor")
 local InteractionSensor = require("sensors.InteractionSensor")
+local InventorySensor = require("sensors.InventorySensor")
 local SessionRecorder = require("recorder.SessionRecorder")
 local EventCorrelator = require("recorder.EventCorrelator")
 
@@ -146,6 +147,8 @@ function Application:init()
 	context.movementSensor = MovementSensor.new(context)
 	context.interactionSensor = InteractionSensor.new(context)
 	context.interactionSensor:start()
+	context.inventorySensor = InventorySensor.new(context)
+	context.inventorySensor:start()
 	context.recorder = SessionRecorder.new(context)
 	context.eventCorrelator = EventCorrelator.new(context)
 	context.eventCorrelator:start()
@@ -206,6 +209,7 @@ function Application:stop()
 	end
 	if context.movementSensor then context.movementSensor:stop() end
 	if context.interactionSensor then context.interactionSensor:stop() end
+	if context.inventorySensor then context.inventorySensor:stop() end
 	if context.recorder then context.recorder:stop() end
 	if context.eventCorrelator then context.eventCorrelator:stop() end
 	if context.world then context.world:destroy() end

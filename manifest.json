@@ -22,6 +22,7 @@
 	"world.EntityClassifier": "src/world/EntityClassifier.lua",
 	"sensors.MovementSensor": "src/sensors/MovementSensor.lua",
 	"sensors.InteractionSensor": "src/sensors/InteractionSensor.lua",
+	"sensors.InventorySensor": "src/sensors/InventorySensor.lua",
 	"recorder.SessionRecorder": "src/recorder/SessionRecorder.lua",
 	"recorder.EventCorrelator": "src/recorder/EventCorrelator.lua",
     "features.FeatureManager": "src/features/FeatureManager.lua",
