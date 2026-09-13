@@ -154,6 +154,7 @@ function PathOverlay:start()
 	if existing then existing:Destroy() end
 	self.folder = Instance.new("Folder")
 	self.folder.Name = "HanjiScriptPathOverlay"
+	self.folder:SetAttribute("HanjiScriptSystem", "path-overlay")
 	self.folder.Parent = parent
 
 	self.maid:Add(self.context.eventBus:on(EventTypes.NavigationPathComputed, function(event)

@@ -9,6 +9,18 @@ local SpatialIndex = require("world.SpatialIndex")
 local WorldModel = {}
 WorldModel.__index = WorldModel
 
+local function isSystemInstance(instance)
+	local current = instance
+	while current do
+		local ok, value = pcall(current.GetAttribute, current, "HanjiScriptSystem")
+		if ok and value then
+			return true
+		end
+		current = current.Parent
+	end
+	return false
+end
+
 local function entity(instance)
 	local position
 	if instance:IsA("BasePart") then
@@ -44,6 +56,9 @@ function WorldModel.new(context)
 end
 
 function WorldModel:add(instance)
+	if isSystemInstance(instance) then
+		return nil
+	end
 	if self.entities[instance] then
 		return self.entities[instance]
 	end
@@ -67,6 +82,10 @@ function WorldModel:remove(instance)
 end
 
 function WorldModel:refresh(instance)
+	if isSystemInstance(instance) then
+		self:remove(instance)
+		return nil
+	end
 	local workspaceService = game:GetService("Workspace")
 	local ok, isLive = pcall(function()
 		return instance and instance:IsDescendantOf(workspaceService)
@@ -114,6 +133,9 @@ function WorldModel:tree(limit)
 
 	local function visit(instance, depth)
 		if count >= maxEntries then
+			return
+		end
+		if isSystemInstance(instance) then
 			return
 		end
 
