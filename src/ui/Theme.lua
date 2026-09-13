@@ -56,7 +56,7 @@ Theme.Text = {
 	subtitle = 14,
 	body = 14,
 	label = 13,
-	caption = 12,
+	caption = 13,
 	micro = 11,
 	mono = 12,
 }
@@ -76,10 +76,10 @@ local function packagedFont(family, weight, fallback)
 end
 
 Theme.Font = {
-	-- Gotham Bold remains the display face; it gives dashboard headings their
-	-- strong, familiar shape.  Montserrat supplies a less generic UI text face.
-	display = Enum.Font.GothamBold,
-	title = Enum.Font.GothamBold,
+	-- One UI family gives every screen a consistent voice.  Mono remains only
+	-- for values where fixed-width scanning is useful (logs, versions, IDs).
+	display = packagedFont("Montserrat", Enum.FontWeight.ExtraBold, Enum.Font.GothamBold),
+	title = packagedFont("Montserrat", Enum.FontWeight.Bold, Enum.Font.GothamBold),
 	medium = packagedFont("Montserrat", Enum.FontWeight.SemiBold, Enum.Font.GothamMedium),
 	body = packagedFont("Montserrat", Enum.FontWeight.Medium, Enum.Font.Gotham),
 	mono = packagedFont("RobotoMono", Enum.FontWeight.Regular, Enum.Font.Code),
