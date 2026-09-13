@@ -13,6 +13,8 @@ function Analytics.new(context)
 		values = {},
 		running = false,
 		startedAt = nil,
+		navigationStartedAt = nil,
+		cycleStartedAt = nil,
 	}, Analytics)
 end
 
@@ -37,7 +39,18 @@ function Analytics:start()
 		workflowTransitions = 0,
 		pickupCandidates = 0,
 		sellCandidates = 0,
+		navigationStarted = 0,
+		navigationCompleted = 0,
+		navigationFailures = 0,
+		navigationDistance = 0,
+		navigationPathLength = 0,
+		navigationPathSamples = 0,
+		workflowCycles = 0,
+		cycleDuration = 0,
+		cycleSamples = 0,
 	}
+	self.navigationStartedAt = nil
+	self.cycleStartedAt = nil
 
 	local bus = self.context.eventBus
 	self.maid:Add(bus:on(EventTypes.WorldEntityAdded, function()
@@ -52,9 +65,41 @@ function Analytics:start()
 	self.maid:Add(bus:on(EventTypes.InteractionCompleted, function()
 		self:_increment("interactionsCompleted")
 	end))
+	self.maid:Add(bus:on(EventTypes.NavigationStarted, function()
+		self:_increment("navigationStarted")
+		self.navigationStartedAt = os.clock()
+	end))
+	self.maid:Add(bus:on(EventTypes.NavigationPathComputed, function(event)
+		if not event then return end
+		local distance = tonumber(event.distance)
+		local pathLength = tonumber(event.pathLength)
+		if distance then self.values.navigationDistance += math.max(0, distance) end
+		if pathLength then
+			self.values.navigationPathLength += math.max(0, pathLength)
+			self.values.navigationPathSamples += 1
+		end
+	end))
+	self.maid:Add(bus:on(EventTypes.NavigationCompleted, function(event)
+		self:_increment("navigationCompleted")
+		if event and event.success == false then
+			self:_increment("navigationFailures")
+		end
+		self.navigationStartedAt = nil
+	end))
 	self.maid:Add(bus:on(EventTypes.WorkflowStateChanged, function(event)
 		if event and event.signal ~= "start" and event.signal ~= "stop" then
 			self:_increment("workflowTransitions")
+		end
+		if not event then return end
+		if event.signal == "start" then
+			self.cycleStartedAt = os.clock()
+		elseif event.previousState == "sell" and event.state == "find_item" then
+			self:_increment("workflowCycles")
+			if self.cycleStartedAt then
+				self.values.cycleDuration += math.max(0, os.clock() - self.cycleStartedAt)
+				self:_increment("cycleSamples")
+			end
+			self.cycleStartedAt = os.clock()
 		end
 	end))
 	self.maid:Add(bus:on(EventTypes.SemanticAction, function(event)
@@ -79,6 +124,8 @@ function Analytics:stop()
 	end
 	self.running = false
 	self.maid:Clean()
+	self.navigationStartedAt = nil
+	self.cycleStartedAt = nil
 	return true
 end
 
@@ -87,7 +134,22 @@ function Analytics:snapshot()
 	for key, value in pairs(self.values) do
 		out[key] = value
 	end
-	out.uptime = self.startedAt and os.clock() - self.startedAt or 0
+	out.uptime = self.startedAt and math.max(0, os.clock() - self.startedAt) or 0
+	out.averagePathLength = out.navigationPathSamples > 0
+		and out.navigationPathLength / out.navigationPathSamples
+		or 0
+	out.averageCycleTime = out.cycleSamples > 0
+		and out.cycleDuration / out.cycleSamples
+		or 0
+	out.navigationSuccessRate = out.navigationCompleted > 0
+		and (out.navigationCompleted - out.navigationFailures) / out.navigationCompleted
+		or 0
+	out.routeEfficiency = out.navigationPathLength > 0
+		and out.navigationDistance / out.navigationPathLength
+		or 0
+	out.itemsPerMinute = out.uptime > 0
+		and (out.inventoryGained / (out.uptime / 60))
+		or 0
 	return out
 end
 

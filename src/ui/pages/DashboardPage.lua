@@ -210,8 +210,50 @@ function DashboardPage.create(context, parent)
 		name = "Activity",
 		padding = Theme.Spacing.lg,
 		size = UDim2.new(1, 0, 0, 182),
+		layoutOrder = 4,
+	})
+
+	local analyticsCard = Components.card(frame, {
+		name = "Analytics",
+		padding = Theme.Spacing.lg,
+		size = UDim2.new(1, 0, 0, 112),
 		layoutOrder = 3,
 	})
+	Components.label(analyticsCard, {
+		text = "OBSERVABILITY",
+		font = Theme.Font.medium,
+		textSize = Theme.Text.micro,
+		color = palette.textMuted,
+		size = UDim2.new(1, 0, 0, 18),
+	})
+
+	local analyticsLabels = {}
+	local analyticsFields = {
+		{ key = "Route", value = "—", x = 0 },
+		{ key = "Nav success", value = "—", x = 0.25 },
+		{ key = "Cycles", value = "—", x = 0.5 },
+		{ key = "Items / min", value = "—", x = 0.75 },
+	}
+	for _, field in ipairs(analyticsFields) do
+		local position = UDim2.new(field.x, 0, 0, 32)
+		Components.label(analyticsCard, {
+			text = string.upper(field.key),
+			font = Theme.Font.medium,
+			textSize = Theme.Text.micro,
+			color = palette.textFaint,
+			position = position,
+			size = UDim2.new(0.25, -8, 0, 14),
+		})
+		analyticsLabels[field.key] = Components.label(analyticsCard, {
+			text = field.value,
+			font = Theme.Font.mono,
+			textSize = Theme.Text.caption,
+			color = palette.text,
+			position = UDim2.new(field.x, 0, 0, 53),
+			size = UDim2.new(0.25, -8, 0, 18),
+			truncate = Enum.TextTruncate.AtEnd,
+		})
+	end
 	Components.label(activity, {
 		text = "RECENT ACTIVITY",
 		font = Theme.Font.medium,
@@ -311,10 +353,21 @@ function DashboardPage.create(context, parent)
 		local target = workflow.plan and workflow.plan.target
 		local inventory = context.inventorySensor and context.inventorySensor:getCount() or 0
 		local capacity = context.config:get("automation.inventoryCapacity", 20)
+		local analyticsSnapshot = context.analytics and context.analytics:snapshot() or {}
 		snapshotLabels.WorldModel.Text = world and ("%d entities"):format(world:count()) or "unavailable"
 		snapshotLabels.Workflow.Text = workflow.running and (workflow.state or "running") or "idle"
 		snapshotLabels.Target.Text = target and (target.name or target.path or "selected") or "—"
 		snapshotLabels.Inventory.Text = ("%d / %d items"):format(inventory, capacity)
+		analyticsLabels.Route.Text = analyticsSnapshot.averagePathLength > 0
+			and ("%.1f studs"):format(analyticsSnapshot.averagePathLength)
+			or "—"
+		analyticsLabels["Nav success"].Text = analyticsSnapshot.navigationCompleted > 0
+			and ("%d%%"):format(math.floor(analyticsSnapshot.navigationSuccessRate * 100 + 0.5))
+			or "—"
+		analyticsLabels.Cycles.Text = tostring(analyticsSnapshot.workflowCycles or 0)
+		analyticsLabels["Items / min"].Text = analyticsSnapshot.itemsPerMinute > 0
+			and ("%.1f"):format(analyticsSnapshot.itemsPerMinute)
+			or "—"
 	end
 
 	for _, eventType in ipairs({
@@ -322,6 +375,10 @@ function DashboardPage.create(context, parent)
 		"workflow.plan_updated",
 		"automation.state_changed",
 		"inventory.changed",
+		"navigation.started",
+		"navigation.path_computed",
+		"navigation.completed",
+		"semantic.action",
 	}) do
 		maid:Add(context.eventBus:on(eventType, refresh))
 	end
